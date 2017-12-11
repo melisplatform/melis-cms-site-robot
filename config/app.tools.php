@@ -23,6 +23,11 @@ return array(
                                     'controller' => 'ToolSiteRobot',
                                     'action' => 'tool-content-table-limit',
                                 ),
+                                'choose-sites' => array(
+                                    'module' => 'MelisCmsSiteRobot',
+                                    'controller' => 'ToolSiteRobot',
+                                    'action' => 'tool-site-robot-content-filters-sites',
+                                ),
                             ),
                             'center' => array(
                                 'search' => array(
@@ -50,8 +55,8 @@ return array(
                                 // if true, then the column is sortable to ASC or DESC
                                 'sortable' => true
                             ),
-                            'sdom_site_id' => array(
-                                'text' => 'tr_sdom_site_id',
+                            'site_name' => array(
+                                'text' => 'tr_site_name',
                                 'css'  => array('width' => '20%', 'padding-right' => 0),
                                 'sortable' => true
                             ),
@@ -65,7 +70,7 @@ return array(
                             // because the 10% is reserved to the action column where the buttons will be displayed
                         ),
                         // Set what columns that will be used when searching
-                        'searchables' => array('sdom_id', 'sdom_site_id', 'sdom_domain'),
+                        'searchables' => array('sdom_id', 'site_name', 'sdom_domain'),
                         // this wi
                         'actionButtons' => array(
                             // this configuration adds a button to the action column inside the table

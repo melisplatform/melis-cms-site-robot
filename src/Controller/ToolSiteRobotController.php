@@ -270,6 +270,27 @@ class ToolSiteRobotController extends AbstractActionController
     }
 
     /**
+     * Renders to the site filter selection in the filter bar in the datatable
+     * @return \Zend\View\Model\ViewModel
+     */
+    public function toolSiteRobotContentFiltersSitesAction()
+    {
+        $translator = $this->getServiceLocator()->get('translator');
+        $siteTable = $this->getServiceLocator()->get('MelisEngineTableSite');
+        
+        $sites = array();
+        $sites[] = '<option value="">'. $translator->translate('tr_site_robot_label_choose') .'</option>';
+       
+       foreach($siteTable->fetchAll() as $site){
+           $sites[] = '<option value="'.$site->site_id.'">'. $site->site_name .'</option>';
+       }
+       
+       $view = new ViewModel();
+       $view->sites = $sites;
+       return $view;
+    }
+
+    /**
      * MelisCmsSiteRobot/src/MelisCmsSiteRobot/Controller/ToolSiteRobotController.php
      * Save data
      * @return json response

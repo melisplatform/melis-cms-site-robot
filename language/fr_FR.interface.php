@@ -8,7 +8,7 @@ return array(
     'tr_site_robot_column_id' => 'ID',
     'tr_site_robot_column_title' => 'Titre',
     'tr_sdom_id' => 'ID',
-    'tr_sdom_site_id' => 'ID du site',
+    'tr_site_name' => 'Site',
     'tr_sdom_domain' => 'Domaine',
     'tr_sdom_domain_modal' => 'Domaine',
     'tr_sdom_domain_modal tooltip' => 'Domaine pour lequel le Robots.txt est édité',
@@ -22,4 +22,6 @@ return array(
     'tr_domain_column_action_edit' => 'Modifier',
     'tr_site_robot_title' => 'Robots.txt',
     'tr_site_robot_modal_description' => 'Editez ici le Robots.txt de ce domaine',
+    'tr_site_robot_label_choose' => 'Choisir',
+    'tr_site_robot_label_choose_dropdown' => 'Site',
 );
