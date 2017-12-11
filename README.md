@@ -26,19 +26,22 @@ In case of problems, SQL files are located here:
 
 Retrieve data for MelisCmsSiteRobot:
 
+```
 // Get MelisEngineTableSiteDomain service  
 $table = $this->getServiceLocator()->get('MelisEngineTableSiteDomain');  
 
 // Get all data from site domain table.  
 $data = $table->getData($searchValue, $searchableCols, $selColOrder, $orderDirection, $start, $length)->toArray();  
+```
 
 
+```
 // Get MelisEngineTableRobot service  
 $robotTable = $this->getServiceLocator()->get('MelisEngineTableRobot');  
 
 //Get robots.txt contents and data for each domain  
 $robotData  = (array) $robotTable->getEntryByField('robot_site_domain', $domainName)->current();  
-
+```
 
 ## Special URL  
 
