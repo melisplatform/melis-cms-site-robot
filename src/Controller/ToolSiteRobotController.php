@@ -36,6 +36,7 @@ class ToolSiteRobotController extends AbstractActionController
             $content = $data->robot_text;
         }  
         $view = new ViewModel();
+        $view->setTerminal(true);
         $view->content = $content;
 
         return $view;
