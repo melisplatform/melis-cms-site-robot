@@ -240,9 +240,10 @@ class ToolSiteRobotController extends AbstractActionController
             $searchableCols = $this->getTool()->getSearchableColumns();
             $start          = (int) $post['start'];
             $length         = (int) $post['length'];
+            $siteId         = isset($post['tpl_site_id']) ? $post['tpl_site_id'] : null;
 
             $table = $this->siteDomainTable();
-            $data = $table->getData($searchValue, $searchableCols, $selColOrder, $orderDirection, $start, $length)->toArray();
+            $data = $table->getData($searchValue, $searchableCols, $selColOrder, $orderDirection, $start, $length, $siteId)->toArray();
             $dataCount = $table->getTotalData();
             $dataFilteredCount = $table->getTotalFiltered();
             $tableData = $data;

@@ -13,7 +13,7 @@ return array(
                         // the url that will return the JSON domain data
                         'ajaxUrl' => '/melis/MelisCmsSiteRobot/ToolSiteRobot/getSiteRobotData',
                         // additional request parameters, this should be a javascript function
-                        'dataFunction' => '',
+                        'dataFunction' => 'initSiteList',
                         // the callback event that will be called after table rendering
                         'ajaxCallback' => '',
                         'filters' => array(
