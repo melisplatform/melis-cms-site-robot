@@ -16,7 +16,8 @@
     "analytics"
   ],
   "extra": {
-    "module-name": "MelisCmsSiteRobot"
+    "module-name": "MelisCmsSiteRobot",
+    "dbdeploy": true
   },
   "require": {
     "php": "^5.5 || ^7.0",
