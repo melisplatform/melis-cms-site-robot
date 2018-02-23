@@ -6,34 +6,51 @@ MelisCmsSiteRobot provides a functionality to add robots.txt on each domain.
 
 These instructions will get you a copy of the project up and running on your machine.  
 
-## Prerequisites  
+### Prerequisites  
 
-You will need to install melisplatform/melis-engine in order to have this module running. 
+The following modules need to be installed to have Melis newsletter module run:
+* Melis engine
+
+### Installing
+
+Run the composer command:
+```
+composer require melisplatform/melis-cms-site-robot
+```
 
 ### Database  
 
-Database model is accessible on the MySQL Workbench file:  
+Database model is accessible via the MySQL Workbench file:
+```
 /melis-cms-site-robot/install/sql/Model  
-In case of problems, SQL files are located here:  
+```
+
+Database will be installed through composer and its hooks.  
+In case of problems, SQL files are located here:   
+```
 /melis-cms-site-robot/install/sql
+```
 
-## Tools & Elements provided  
+## Tools and elements provided  
 
-* Access to Robots.txt list for each domain
-* Manage of robots.txt contents for each domain
+* Melis CMS site robot tool
+* Melis CMS site robot service
 
-## Running the code  
+### Melis CMS site robot tool
 
-Retrieve data for MelisCmsSiteRobot:
+Provides the user the ability to access and manage the Robots.txt of every domain.
+
+### Melis CMS site robot service
+
+* Using the service to retrieve Robots.txt data for each domain:
 
 ```
 // Get MelisEngineTableSiteDomain service  
 $table = $this->getServiceLocator()->get('MelisEngineTableSiteDomain');  
-
-// Get all data from site domain table.  
+ 
+// Get all data from site domain table  
 $data = $table->getData($searchValue, $searchableCols, $selColOrder, $orderDirection, $start, $length)->toArray();  
 ```
-
 
 ```
 // Get MelisEngineTableRobot service  
@@ -43,27 +60,12 @@ $robotTable = $this->getServiceLocator()->get('MelisEngineTableRobot');
 $robotData  = (array) $robotTable->getEntryByField('robot_site_domain', $domainName)->current();  
 ```
 
-## Special URL  
+## Authors
 
-Setting Robots.txt route:
-```
-'melis-cms-site-robot-special-urls' => array(
-    'type'    => 'Literal',
-    'options' => array(
-        'route'    => '/',
-    ),
-    'may_terminate' => false,
-    'child_routes' => array(
-        'robots_txt' => array(
-            'type' => 'Literal',
-            'options' => array(
-                'route'    => 'robots.txt',
-                'defaults' => array(
-                    'controller' => 'MelisCmsSiteRobot\Controller\ToolSiteRobot',
-                    'action'     => 'toolRobotsTxt',
-                ),
-            ),
-        ),
-    ),
-),
-```
+* **Melis Technology** - [www.melistechnology.com](https://www.melistechnology.com/)
+
+See also the list of [contributors](https://github.com/melisplatform/melis-cms-site-robot/contributors) who participated in this project.
+
+## License
+
+This project is licensed under the OSL-3.0 License - see the [LICENSE.md](LICENSE.md) file for details
