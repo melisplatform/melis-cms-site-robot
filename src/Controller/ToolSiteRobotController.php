@@ -36,6 +36,7 @@ class ToolSiteRobotController extends AbstractActionController
             $content = $data->robot_text;
         }  
         $view = new ViewModel();
+        $view->setTerminal(true);
         $view->content = $content;
 
         return $view;
@@ -240,9 +241,10 @@ class ToolSiteRobotController extends AbstractActionController
             $searchableCols = $this->getTool()->getSearchableColumns();
             $start          = (int) $post['start'];
             $length         = (int) $post['length'];
+            $siteId         = isset($post['tpl_site_id']) ? $post['tpl_site_id'] : null;
 
             $table = $this->siteDomainTable();
-            $data = $table->getData($searchValue, $searchableCols, $selColOrder, $orderDirection, $start, $length)->toArray();
+            $data = $table->getData($searchValue, $searchableCols, $selColOrder, $orderDirection, $start, $length, $siteId)->toArray();
             $dataCount = $table->getTotalData();
             $dataFilteredCount = $table->getTotalFiltered();
             $tableData = $data;
@@ -267,6 +269,27 @@ class ToolSiteRobotController extends AbstractActionController
         ];
 
         return new JsonModel($response);
+    }
+
+    /**
+     * Renders to the site filter selection in the filter bar in the datatable
+     * @return \Zend\View\Model\ViewModel
+     */
+    public function toolSiteRobotContentFiltersSitesAction()
+    {
+        $translator = $this->getServiceLocator()->get('translator');
+        $siteTable = $this->getServiceLocator()->get('MelisEngineTableSite');
+        
+        $sites = array();
+        $sites[] = '<option value="">'. $translator->translate('tr_site_robot_label_choose') .'</option>';
+       
+       foreach($siteTable->fetchAll() as $site){
+           $sites[] = '<option value="'.$site->site_id.'">'. $site->site_name .'</option>';
+       }
+       
+       $view = new ViewModel();
+       $view->sites = $sites;
+       return $view;
     }
 
     /**

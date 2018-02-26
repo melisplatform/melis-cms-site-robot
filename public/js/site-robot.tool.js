@@ -18,6 +18,12 @@ $(document).ready(function() {
         });
     });
 
+    // Reload datatable on robot site selection
+    $body.on("change", "#robotSiteSelect", function(){
+        var tableId = $(this).parents().eq(6).find('table').attr('id');
+        $("#"+tableId).DataTable().ajax.reload();
+    });
+
     /**
      * module/MelisSiteRobot/public/js/site-robot.tools.js
      * Handles an event for saving an domain
@@ -55,3 +61,10 @@ $(document).ready(function() {
     });
 
 });
+
+// get data from site dropdown select
+window.initSiteList = function(data, tblSettings){
+    if($('#robotSiteSelect').length){
+        data.tpl_site_id = $('#robotSiteSelect').val();
+    } 
+}

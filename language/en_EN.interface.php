@@ -7,7 +7,7 @@ return array(
     'tr_site_robot_column_id' => 'ID',
     'tr_site_robot_column_title' => 'Title',
     'tr_sdom_id' => 'ID',
-    'tr_sdom_site_id' => 'Site Robot',
+    'tr_site_name' => 'Site',
     'tr_sdom_domain' => 'Domain',
     'tr_site_robot_edit' => 'Edit Robots.txt',
     'tr_sdom_domain_modal' => 'Domain ',
@@ -21,4 +21,6 @@ return array(
     'tr_domain_column_action_edit' => 'Edit',
     'tr_site_robot_title' => 'Robots.txt',
     'tr_site_robot_modal_description' => 'Edit here the Robots.txt of this domain',
+    'tr_site_robot_label_choose' => 'Choose',
+    'tr_site_robot_label_choose_dropdown' => 'Site',
 );
