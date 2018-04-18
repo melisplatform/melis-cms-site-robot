@@ -39,7 +39,21 @@ return array(
                 ),
                 'js' => array(
                     '/MelisCmsSiteRobot/js/site-robot.tool.js',
-                )
+                ),
+                /**
+                 * the "build" configuration compiles all assets into one file to make
+                 * lesser requests
+                 */
+                'build' => [
+                    // lists of assets that will be loaded in the layout
+                    'css' => [
+                        '/MelisCmsSiteRobot/build/css/bundle.css',
+
+                    ],
+                    'js' => [
+                        '/MelisCmsSiteRobot/build/js/bundle.js',
+                    ]
+                ]
             ),
             'datas' => array(),
             'interface' => array(
