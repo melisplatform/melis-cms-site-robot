@@ -26,7 +26,6 @@ class Module
         $eventManager        = $e->getApplication()->getEventManager();
         $moduleRouteListener = new ModuleRouteListener();
         $moduleRouteListener->attach($eventManager);
-        //$eventManager->attach(new MelisCmsSiteRobotFlashMessengerListener());
         $this->createTranslations($e);
     }
 

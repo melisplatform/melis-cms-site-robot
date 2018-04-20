@@ -79,11 +79,6 @@ return array(
                                 'controller' => 'ToolSiteRobot',
                                 'action' => 'tool-content-table-action-edit',
                             ),
-                            // 'delete' => array(
-                            //     'module' => 'MelisCmsSiteRobot',
-                            //     'controller' => 'ToolSiteRobot',
-                            //     'action' => 'tool-content-table-action-delete',
-                            // ),
                         ),
 
                         'modals' => array( // handles the contents of the modals

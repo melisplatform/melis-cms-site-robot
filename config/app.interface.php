@@ -87,20 +87,6 @@ return array(
                                 'jsdatas' => array()
                             ),
                             'interface' => array(
-                                // 'site_robot_tool_header_add_button' => array(
-                                //     'conf' => array(
-                                //         'id'   => 'id_site_robot_tool_header_add_button',
-                                //         'name' => 'tr_site_robot_header_add_button',
-                                //         'melisKey' => 'site_robot_tool_header_add_button',
-                                //     ),
-                                //     'forward' => array(
-                                //         'module' => 'MelisCmsSiteRobot',
-                                //         'controller' => 'ToolSiteRobot',
-                                //         'action' => 'tool-header-add-button',
-                                //         'jscallback' => '',
-                                //         'jsdatas' => array()
-                                //     ),
-                                // ),
                             ),
                         ),
 
