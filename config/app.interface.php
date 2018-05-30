@@ -7,18 +7,18 @@ return array(
             'interface' => array(
                 'meliscore_leftmenu' => array(
                     'interface' => array(
-                        'meliscore_toolstree' => array(
+                        'meliscms_toolstree_section' => array(
                            'interface' => array(
-                                'meliscms_tools_section' => array(
-                                    'interface' => array( 
-                                        'melis_cms_site_robots_config' => array(
-                                            'conf' => array(
-                                                'type' => '/melis_cms_site_robots/interface/site_robot_tool_display',
-                                                'name' => 'tr_site_robot_title',
-                                            )
-                                        ),
-                                    ),
-                                ), 
+                               'meliscms_site_tools' => [
+                                   'interface' => [
+                                       'melis_cms_site_robots_config' => array(
+                                           'conf' => array(
+                                               'type' => '/melis_cms_site_robots/interface/site_robot_tool_display',
+                                               'name' => 'tr_site_robot_title',
+                                           )
+                                       ),
+                                   ]
+                               ],
                             ),
                         ),
                     ),
