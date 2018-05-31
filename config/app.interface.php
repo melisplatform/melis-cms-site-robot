@@ -9,7 +9,14 @@ return array(
                     'interface' => array(
                         'meliscms_toolstree_section' => array(
                            'interface' => array(
-                               'meliscms_site_tools' => [
+                               'meliscms_site_robot_tools' => [
+                                   'conf' => array(
+                                       'id' => 'id_meliscms_site_robot_tools',
+                                       'name' => 'tr_site_robots',
+                                       'icon' => 'fa-server',
+                                       'rights_checkbox_disable' => true,
+                                       'melisKey' => 'meliscms_site_robot_tools',
+                                   ),
                                    'interface' => [
                                        'melis_cms_site_robots_config' => array(
                                            'conf' => array(

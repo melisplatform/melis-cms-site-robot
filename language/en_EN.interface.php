@@ -1,5 +1,6 @@
 <?php
 return array(
+    'tr_site_robots' => 'Robots',
     'tr_site_robot_tool_business_app_menu' => 'List of domains',
     'tr_site_robot_tool_display_title' => 'List of domains',
     'tr_site_robot_column_action' => 'Action',
