@@ -24,4 +24,9 @@ return array(
     'tr_site_robot_modal_description' => 'Editez ici le Robots.txt de ce domaine',
     'tr_site_robot_label_choose' => 'Choisir',
     'tr_site_robot_label_choose_dropdown' => 'Site',
+
+    'tr_site_robot_header' => 'Header',
+    'tr_site_robot_content' => 'Tool Content',
+    'tr_site_robot_modal_container' => 'Modal Container',
+    'tr_site_robot_modal_content' => 'Modal Content',
 );
