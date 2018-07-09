@@ -7,18 +7,25 @@ return array(
             'interface' => array(
                 'meliscore_leftmenu' => array(
                     'interface' => array(
-                        'meliscore_toolstree' => array(
+                        'meliscms_toolstree_section' => array(
                            'interface' => array(
-                                'meliscms_tools_section' => array(
-                                    'interface' => array( 
-                                        'melis_cms_site_robots_config' => array(
-                                            'conf' => array(
-                                                'type' => '/melis_cms_site_robots/interface/site_robot_tool_display',
-                                                'name' => 'tr_site_robot_title',
-                                            )
-                                        ),
-                                    ),
-                                ), 
+                               'meliscms_site_robot_tools' => [
+                                   'conf' => array(
+                                       'id' => 'id_meliscms_site_robot_tools',
+                                       'name' => 'tr_site_robots',
+                                       'icon' => 'fa-server',
+                                       'rights_checkbox_disable' => true,
+                                       'melisKey' => 'meliscms_site_robot_tools',
+                                   ),
+                                   'interface' => [
+                                       'melis_cms_site_robots_config' => array(
+                                           'conf' => array(
+                                               'type' => '/melis_cms_site_robots/interface/site_robot_tool_display',
+                                               'name' => 'tr_site_robot_title',
+                                           )
+                                       ),
+                                   ]
+                               ],
                             ),
                         ),
                     ),
