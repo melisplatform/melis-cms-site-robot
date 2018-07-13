@@ -1,5 +1,6 @@
 <?php
 return array(
+    'tr_site_robots' => 'Robots',
     'tr_site_robot_tool_business_app_menu' => 'List of domains',
     'tr_site_robot_tool_display_title' => 'List of domains',
     'tr_site_robot_column_action' => 'Action',
@@ -23,4 +24,9 @@ return array(
     'tr_site_robot_modal_description' => 'Edit here the Robots.txt of this domain',
     'tr_site_robot_label_choose' => 'Choose',
     'tr_site_robot_label_choose_dropdown' => 'Site',
+
+    'tr_site_robot_header' => 'Header',
+    'tr_site_robot_content' => 'Tool Content',
+    'tr_site_robot_modal_container' => 'Modal Container',
+    'tr_site_robot_modal_content' => 'Modal Content',
 );
