@@ -55,7 +55,7 @@ return array(
                                 // if true, then the column is sortable to ASC or DESC
                                 'sortable' => true
                             ),
-                            'site_name' => array(
+                            'site_label' => array(
                                 'text' => 'tr_site_name',
                                 'css'  => array('width' => '20%', 'padding-right' => 0),
                                 'sortable' => true
