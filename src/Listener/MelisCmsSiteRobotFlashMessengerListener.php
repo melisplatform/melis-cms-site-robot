@@ -9,9 +9,10 @@
 
 namespace MelisCmsSiteRobot\Listener;
 
+
+use MelisCore\Listener\MelisCoreGeneralListener;
 use Zend\EventManager\EventManagerInterface;
 use Zend\EventManager\ListenerAggregateInterface;
-use MelisCore\Listener\MelisCoreGeneralListener;
 
 /**
  * This listener listens to MelisCmsSiteDomain events in order to add entries in the
@@ -19,7 +20,6 @@ use MelisCore\Listener\MelisCoreGeneralListener;
  */
 class MelisCmsSiteRobotFlashMessengerListener extends MelisCoreGeneralListener implements ListenerAggregateInterface
 {
-
     /**
      * MelisCmsSiteDomain/src/MelisCmsSiteDomain/Listener/MelisCmsSiteDomainFlashMessengerListener.php
      * Handles the flash messenger event listener
@@ -27,24 +27,21 @@ class MelisCmsSiteRobotFlashMessengerListener extends MelisCoreGeneralListener i
      */
     public function attach(EventManagerInterface $events)
     {
-        $sharedEvents      = $events->getSharedManager();
+        $sharedEvents = $events->getSharedManager();
 
         $callBackHandler = $sharedEvents->attach(
             'MelisCmsSiteRobot',
-            array(
-                'melis_domain_flash_messenger'
-            ),
-            function($e){
-
-                $sm = $e->getTarget()->getServiceLocator();
-                $flashMessenger = $sm->get('MelisCoreFlashMessenger');
-
+            [
+                'melis_domain_flash_messenger',
+                'site_robot_flash_messenger'
+            ],
+            function ($e) {
                 $params = $e->getParams();
-                $params['textTitle']   = $params['title'];
+                $params['textTitle'] = $params['title'];
                 $params['textMessage'] = $params['message'];
-                $results = $e->getTarget()->forward()->dispatch(
+                $e->getTarget()->forward()->dispatch(
                     'MelisCore\Controller\MelisFlashMessenger',
-                    array_merge(array('action' => 'log'), $params)
+                    array_merge(['action' => 'log'], $params)
                 )->getVariables();
             },
             -1000);
