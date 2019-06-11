@@ -9,13 +9,14 @@
 namespace MelisCmsSiteRobot\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\ViewModel;
 use Zend\View\Model\JsonModel;
+use Zend\View\Model\ViewModel;
 
 class ToolSiteRobotController extends AbstractActionController
 {
     const TOOL_KEY = 'meliscms_tool_site_robot';
     const TOOL_INDEX = 'meliscms';
+    const LOG_UPDATE = 'CMS_SITE_ROBOT_UPDATE';
 
     /**
      * MelisCmsSiteRobot/src/MelisCmsSiteRobot/Controller/ToolSiteRobotController.php
@@ -170,24 +171,22 @@ class ToolSiteRobotController extends AbstractActionController
         $id = $this->params()->fromRoute('id', $this->params()->fromQuery('id', ''));
         $translator = $this->getServiceLocator()->get('translator');
         $melisKey = $this->params()->fromRoute('melisKey', '');
-        $title    = $translator->translate('tr_site_robot_edit');
-        $data     = array();
+        $title = $translator->translate('tr_site_robot_edit');
 
         $table = $this->siteDomainTable();
-        $data = (array) $table->getEntryById((int) $id)->current();
-       
-        $robotData = '';
-         
+        $data = (array)$table->getEntryById((int)$id)->current();
+
         // get robot text from domain
         if (!empty($data)) {
             $robotTable = $this->robotTable();
             $domainName = isset($data['sdom_domain']) ? $data['sdom_domain'] : '';
-            $robotData  = (array) $robotTable->getEntryByField('robot_site_domain', $domainName)->current();
+            $robotData = (array)$robotTable->getEntryByField('robot_site_domain', $domainName)->current();
 
             $data['robot_text'] = isset($robotData['robot_text']) ? $robotData['robot_text'] : '';
         }
 
-        $form  = $this->getDomainForm();
+        /** @var \Zend\Form\Form $form */
+        $form = $this->getDomainForm();
 
         if ($data) {
             $form->setData($data);
@@ -196,8 +195,8 @@ class ToolSiteRobotController extends AbstractActionController
         $view = new ViewModel();
 
         $view->melisKey = $melisKey;
-        $view->title    = $title;
-        $view->form     = $form;
+        $view->title = $title;
+        $view->form = $form;
         $view->desc = $translator->translate('tr_site_robot_modal_description');
 
         return $view;
@@ -217,7 +216,7 @@ class ToolSiteRobotController extends AbstractActionController
         return $view;
     }
 
-   /**
+    /**
      * MelisCmsSiteRobot/src/MelisCmsSiteRobot/Controller/ToolSiteRobotController.php
      * Get/Dispplay data
      * @return json response
@@ -293,41 +292,44 @@ class ToolSiteRobotController extends AbstractActionController
     }
 
     /**
-     * MelisCmsSiteRobot/src/MelisCmsSiteRobot/Controller/ToolSiteRobotController.php
-     * Save data
-     * @return json response
+     * Saves Robots.txt data
+     * @return JsonModel
      */
     public function saveSiteRobotAction()
     {
         $success = 0;
         $message = 'tr_site_robot_save_ko';
-        $title   = 'tr_site_robot_tool_display_title';
-        $errors  = array();
+        $title = 'tr_site_robot_title';
+        $errors = [];
         $request = $this->getRequest();
         $translator = $this->getServiceLocator()->get('translator');
+        $id = 0;
+        $domainId = 0;
 
-        if($request->isPost()) {
-
-            $post = get_object_vars($request->getPost());
+        if ($request->isPost()) {
+            $post = $request->getPost()->toArray();
             $form = $this->getDomainForm();
             $form->setData($post);
 
-            if($form->isValid()) {
+            if ($form->isValid()) {
                 $data = $form->getData();
+
+                /** $domainId was taken for logging purposes */
+                $domainId = empty($data['sdom_id']) ? 0 : $data['sdom_id'];
+                unset($data['sdom_id']);
+
                 $data['robot_site_domain'] = $data['sdom_domain'];
                 unset($data['sdom_domain']);
 
                 $table = $this->robotTable();
-                $robotData  = (array) $table->getEntryByField('robot_site_domain', $data['robot_site_domain'])->current();
-                
-                $id = '';
+                $robotData = (array)$table->getEntryByField('robot_site_domain', $data['robot_site_domain'])->current();
 
                 if ($data) {
-                    $id = isset($robotData['robot_id']) ? (int) $robotData['robot_id'] : null;
+                    $id = isset($robotData['robot_id']) ? (int)$robotData['robot_id'] : null;
                 }
                 $success = $table->save($data, $id);
-                
-                if($success) {
+
+                if ($success) {
                     $success = 1;
                     $message = 'tr_site_robot_save_ok';
                 }
@@ -336,15 +338,21 @@ class ToolSiteRobotController extends AbstractActionController
             }
         }
 
-        $response = array(
+        $response = [
             'success' => $success,
-            'title'   => $translator->translate($title),
+            'title' => $translator->translate($title),
             'message' => $translator->translate($message),
-            'errors'  => $errors
-        );
+            'errors' => $errors
+        ];
 
-        // add to flash messenger
-        $this->getEventManager()->trigger('site_robot_flash_messenger', $this, $response);
+        $this->getEventManager()->trigger(
+            'site_robot_flash_messenger',
+            $this,
+            array_merge(
+                $response,
+                ['typeCode' => self::LOG_UPDATE, 'itemId' => $domainId]
+            )
+        );
 
         return new JsonModel($response);
     }

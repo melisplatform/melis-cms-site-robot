@@ -38,6 +38,7 @@ return array(
          */
         'melis_cms_site_robots' => array(
             'conf' => array(
+                'rightsDisplay' => 'none',
                 'name' => 'tr_site_robot_title',
             ),
             'ressources' => array(

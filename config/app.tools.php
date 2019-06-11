@@ -107,6 +107,12 @@ return array(
                             ),
                             'hydrator'  => 'Zend\Stdlib\Hydrator\ArraySerializable',
                             'elements' => array(
+                                [
+                                    'spec' => [
+                                        'name' => 'sdom_id',
+                                        'type' => 'hidden',
+                                    ],
+                                ],
                                 array(
                                     'spec' => array(
                                         'name' => 'sdom_domain',
