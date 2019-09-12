@@ -15,7 +15,7 @@ return array(
                         // additional request parameters, this should be a javascript function
                         'dataFunction' => 'initSiteList',
                         // the callback event that will be called after table rendering
-                        'ajaxCallback' => '',
+                        'ajaxCallback' => 'paginateDataTables()',
                         'filters' => array(
                             'left' => array(
                                 'limit' => array(
