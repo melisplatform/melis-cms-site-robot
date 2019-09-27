@@ -281,10 +281,9 @@ class ToolSiteRobotController extends AbstractActionController
         
         $sites = array();
         $sites[] = '<option value="">'. $translator->translate('tr_site_robot_label_choose') .'</option>';
-       
-       foreach($siteTable->fetchAll() as $site){
-           $sites[] = '<option value="'.$site->site_id.'">'. $site->site_name .'</option>';
-       }
+        foreach($siteTable->fetchAll() as $site){
+           $sites[] = '<option value="'.$site->site_id.'">'. $site->site_label .'</option>';
+        }
        
        $view = new ViewModel();
        $view->sites = $sites;
