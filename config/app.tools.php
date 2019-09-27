@@ -70,7 +70,7 @@ return array(
                             // because the 10% is reserved to the action column where the buttons will be displayed
                         ),
                         // Set what columns that will be used when searching
-                        'searchables' => array('sdom_id', 'site_name', 'sdom_domain'),
+                        'searchables' => array('sdom_id', 'site_label', 'sdom_domain'),
                         // this wi
                         'actionButtons' => array(
                             // this configuration adds a button to the action column inside the table
