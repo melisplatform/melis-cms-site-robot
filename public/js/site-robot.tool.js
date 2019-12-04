@@ -73,8 +73,3 @@ window.initSiteList = function(data, tblSettings){
         data.tpl_site_id = $('#robotSiteSelect').val();
     } 
 }
-
-// paginate dataTables data
-window.paginateDataTables = function() {
-    melisCore.paginateDataTables();
-}
