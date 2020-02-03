@@ -1,1 +1,75 @@
-$(document).ready(function(){$body=$("body");$body.on("click",".btn-edit-domain",function(){var e=$(this).parents("tr").attr("id");window.parent.melisHelper.createModal("id_site_robot_tool_modal_content","site_robot_tool_modal_content",!1,{id:e},"/melis/MelisCmsSiteRobot/ToolSiteRobot/toolModalContainer",function(){melisCoreTool.done(".btn-edit-domain")})}),$body.on("change","#robotSiteSelect",function(){var e=$(this).parents().eq(6).find("table").attr("id");$("#"+e).DataTable().ajax.reload()}),$body.on("submit","form#id_site_robot_form",function(e){var o=new FormData(this);melisCoreTool.pending("#btn-save-site-robot"),$.ajax({type:"POST",url:"/melis/MelisCmsSiteRobot/ToolSiteRobot/saveSiteRobot",data:o,processData:!1,cache:!1,contentType:!1,dataType:"json"}).success(function(e){e.success?($("div.modal").modal("hide"),$("#"+activeTabId+" .melis-refreshTable").trigger("click"),melisHelper.melisOkNotification(e.title,e.message)):melisHelper.melisKoNotification(e.title,e.message,e.errors),melisCore.flashMessenger(),melisCoreTool.done("#btn-save-site-robot")}).error(function(){melisCoreTool.done("#btn-save-site-robot")}),e.preventDefault()})}),window.initSiteList=function(e,o){$("#robotSiteSelect").length&&(e.tpl_site_id=$("#robotSiteSelect").val())};
+$(function() {
+    var $body       = $("body"),
+        // the zone ID of the modal content in the app.interface
+        zoneId      = "id_site_robot_tool_modal_content",
+        // the melisKey of the modal content in the app.interface
+        melisKey    = "site_robot_tool_modal_content",
+        // the URL of the modal container
+        modalUrl    = "/melis/MelisCmsSiteRobot/ToolSiteRobot/toolModalContainer";
+
+        /**
+         * module/MelisSiteRobot/public/js/site-robot.tools.js
+         * Handles the event that will launch a modal with the data selected
+         */
+        $body.on("click", ".btn-edit-domain", function() {
+            var $this   = $(this),
+                id      = $this.parents("tr").attr("id");
+
+                window.parent.melisHelper.createModal(zoneId, melisKey, false, {id: id}, modalUrl, function() {
+                    melisCoreTool.done(".btn-edit-domain");
+                });
+        });
+
+        // Reload datatable on robot site selection
+        $body.on("change", "#robotSiteSelect", function(){
+            var $this   = $(this),
+                tableId = $this.parents().eq(6).find('table').attr('id');
+
+                $("#"+tableId).DataTable().ajax.reload();
+        });
+
+        /**
+         * module/MelisSiteRobot/public/js/site-robot.tools.js
+         * Handles an event for saving an domain
+         */
+        $body.on("submit", "form#id_site_robot_form", function(e) {
+            var formData = new FormData(this);
+
+                melisCoreTool.pending("#btn-save-site-robot");
+
+                $.ajax({
+                    type    : 'POST',
+                    url     : '/melis/MelisCmsSiteRobot/ToolSiteRobot/saveSiteRobot',
+                    data    : formData,
+                    processData : false,
+                    cache       : false,
+                    contentType : false,
+                    dataType    : 'json',
+                }).done(function(data){
+                    if(data.success) {
+                        $("div.modal").modal("hide");
+                        // triggers the refresh button in the filter bar
+                        $("#" + activeTabId + " .melis-refreshTable").trigger("click");
+                        melisHelper.melisOkNotification(data.title, data.message);
+                    }
+                    else {
+                        melisHelper.melisKoNotification(data.title, data.message, data.errors);
+                    }
+                    // update flash messenger component
+                    melisCore.flashMessenger();
+                    melisCoreTool.done("#btn-save-site-robot");
+                }).fail(function(){
+                    melisCoreTool.done("#btn-save-site-robot");
+                    alert( translations.tr_meliscore_error_message );
+                });
+
+                e.preventDefault();
+        });
+});
+
+// get data from site dropdown select
+window.initSiteList = function(data, tblSettings){
+    if ( $('#robotSiteSelect').length ) {
+        data.tpl_site_id = $('#robotSiteSelect').val();
+    } 
+}

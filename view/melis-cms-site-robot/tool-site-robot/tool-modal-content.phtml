@@ -25,8 +25,8 @@ if (!empty($this->zoneconfig['conf']['id']))
                                 echo $this->form()->openTag($form);
                                 echo $this->melisFieldCollection($form);
                             ?>
-                                <div align="right">
-                                    <button data-dismiss="modal" class="btn btn-danger pull-left"><i class="fa fa-times"></i> <?php echo $this->translate('tr_site_robot_modal_cancel')?></button>
+                                <div class="footer-modal d-flex flex-row justify-content-between">
+                                    <button data-dismiss="modal" class="btn btn-danger float-left"><i class="fa fa-times"></i> <?php echo $this->translate('tr_site_robot_modal_cancel')?></button>
                                     <button type="submit" class="btn btn-success" id="btn-save-site-robot"><i class="fa fa-save"></i>  <?php echo $this->translate('tr_site_robot_modal_save') ?></button>
                                 </div>
                                 <div class="clearfix"></div>
