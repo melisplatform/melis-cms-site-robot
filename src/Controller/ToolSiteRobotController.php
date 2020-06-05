@@ -8,9 +8,9 @@
 
 namespace MelisCmsSiteRobot\Controller;
 
-use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\JsonModel;
-use Zend\View\Model\ViewModel;
+use MelisCore\Controller\AbstractActionController;
+use Laminas\View\Model\JsonModel;
+use Laminas\View\Model\ViewModel;
 
 class ToolSiteRobotController extends AbstractActionController
 {
@@ -66,7 +66,7 @@ class ToolSiteRobotController extends AbstractActionController
     public function toolHeaderContainerAction()
     {
         $melisKey = $this->getMelisKey();
-        $translator = $this->getServiceLocator()->get('translator');
+        $translator = $this->getServiceManager()->get('translator');
         $view = new ViewModel();
         $view->melisKey = $melisKey;
         $view->title = $translator->translate('tr_site_robot_tool_display_title');
@@ -83,7 +83,7 @@ class ToolSiteRobotController extends AbstractActionController
     public function toolContentContainerAction()
     {
         $melisKey = $this->getMelisKey();
-        $translator = $this->getServiceLocator()->get('translator');
+        $translator = $this->getServiceManager()->get('translator');
         $columns = $this->getTool()->getColumns();
         $columns['actions'] = array('text' =>  $translator->translate('tr_site_robot_column_action'), 'width' => '10%');
         
@@ -169,7 +169,7 @@ class ToolSiteRobotController extends AbstractActionController
     public function toolModalContentAction()
     {
         $id = $this->params()->fromRoute('id', $this->params()->fromQuery('id', ''));
-        $translator = $this->getServiceLocator()->get('translator');
+        $translator = $this->getServiceManager()->get('translator');
         $melisKey = $this->params()->fromRoute('melisKey', '');
         $title = $translator->translate('tr_site_robot_edit');
 
@@ -185,7 +185,7 @@ class ToolSiteRobotController extends AbstractActionController
             $data['robot_text'] = isset($robotData['robot_text']) ? $robotData['robot_text'] : '';
         }
 
-        /** @var \Zend\Form\Form $form */
+        /** @var \Laminas\Form\Form $form */
         $form = $this->getDomainForm();
 
         if ($data) {
@@ -272,12 +272,12 @@ class ToolSiteRobotController extends AbstractActionController
 
     /**
      * Renders to the site filter selection in the filter bar in the datatable
-     * @return \Zend\View\Model\ViewModel
+     * @return \Laminas\View\Model\ViewModel
      */
     public function toolSiteRobotContentFiltersSitesAction()
     {
-        $translator = $this->getServiceLocator()->get('translator');
-        $siteTable = $this->getServiceLocator()->get('MelisEngineTableSite');
+        $translator = $this->getServiceManager()->get('translator');
+        $siteTable = $this->getServiceManager()->get('MelisEngineTableSite');
         
         $sites = array();
         $sites[] = '<option value="">'. $translator->translate('tr_site_robot_label_choose') .'</option>';
@@ -301,7 +301,7 @@ class ToolSiteRobotController extends AbstractActionController
         $title = 'tr_site_robot_title';
         $errors = [];
         $request = $this->getRequest();
-        $translator = $this->getServiceLocator()->get('translator');
+        $translator = $this->getServiceManager()->get('translator');
         $id = 0;
         $domainId = 0;
 
@@ -365,7 +365,7 @@ class ToolSiteRobotController extends AbstractActionController
      */
     private function formatErrorMessage($errors = array())
     {
-        $melisMelisCoreConfig = $this->serviceLocator->get('MelisCoreConfig');
+        $melisMelisCoreConfig = $this->getServiceManager()->get('MelisCoreConfig');
         $appConfigForm = $melisMelisCoreConfig->getItem('melissiterobot/tools/melissiterobot_tool_templates/forms/site_robot_form');
         $appConfigForm = $appConfigForm['elements'];
 
@@ -402,7 +402,7 @@ class ToolSiteRobotController extends AbstractActionController
      */
     private function getTool()
     {
-        $toolSvc = $this->getServiceLocator()->get('MelisCoreTool');
+        $toolSvc = $this->getServiceManager()->get('MelisCoreTool');
         $toolSvc->setMelisToolKey('melis_cms_site_robots', 'melissiterobot_tool_templates');
       
         return $toolSvc;
@@ -428,7 +428,7 @@ class ToolSiteRobotController extends AbstractActionController
      */
     private function robotTable()
     {
-        $table = $this->getServiceLocator()->get('MelisEngineTableRobot');
+        $table = $this->getServiceManager()->get('MelisEngineTableRobot');
         
         return $table;
     }
@@ -441,7 +441,7 @@ class ToolSiteRobotController extends AbstractActionController
      */
     private function siteDomainTable()
     {
-        $table = $this->getServiceLocator()->get('MelisEngineTableSiteDomain');
+        $table = $this->getServiceManager()->get('MelisEngineTableSiteDomain');
         
         return $table;
     }
