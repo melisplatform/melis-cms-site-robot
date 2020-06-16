@@ -8,11 +8,11 @@
 
 namespace MelisCmsSiteRobot\Controller;
 
-use MelisCore\Controller\AbstractActionController;
+use MelisCore\Controller\MelisAbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
 
-class ToolSiteRobotController extends AbstractActionController
+class ToolSiteRobotController extends MelisAbstractActionController
 {
     const TOOL_KEY = 'meliscms_tool_site_robot';
     const TOOL_INDEX = 'meliscms';
