@@ -28,9 +28,6 @@
 		"melisplatform/melis-front": "*",
 		"melisplatform/melis-cms": "*"
 	},
-	"require-dev": {
-		"phpunit/phpunit": "~4.8"
-	},
 	"autoload": {
 		"psr-4": {
 			"MelisCmsSiteRobot\\": "src/"
