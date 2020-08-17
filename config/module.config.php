@@ -69,23 +69,17 @@ return array(
     'service_manager' => array(
         'invokables' => array(
         ),
-        'aliases' => array(
-            'translator' => 'MvcTranslator',
-        ),
         'factories' => array(
-            'MelisCmsSiteRobotTable' => 'MelisCmsSiteRobot\Model\Tables\Factory\MelisCmsSiteRobotTableFactory',
         ),
     ),
 
     'controllers' => array(
         'invokables' => array(
-            'MelisCmsSiteRobot\Controller\ToolSiteRobot' => 'MelisCmsSiteRobot\Controller\ToolSiteRobotController',
+            'MelisCmsSiteRobot\Controller\ToolSiteRobot' => \MelisCmsSiteRobot\Controller\ToolSiteRobotController::class,
         ),
     ),
     'view_manager' => array(
-        'display_not_found_reason' => true,
-        'display_exceptions'       => true,
-        'doctype'                  => 'HTML5',
+        'doctype' => 'HTML5',
         'template_map' => array(
         ),
         'template_path_stack' => array(

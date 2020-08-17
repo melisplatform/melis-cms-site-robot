@@ -11,10 +11,10 @@ namespace MelisCmsSiteRobot;
 
 
 use MelisCmsSiteRobot\Listener\MelisCmsSiteRobotFlashMessengerListener;
-use Zend\Mvc\ModuleRouteListener;
-use Zend\Mvc\MvcEvent;
-use Zend\Session\Container;
-use Zend\Stdlib\ArrayUtils;
+use Laminas\Mvc\ModuleRouteListener;
+use Laminas\Mvc\MvcEvent;
+use Laminas\Session\Container;
+use Laminas\Stdlib\ArrayUtils;
 
 /**
  * MelisCmsSiteRobot/Module.php
@@ -46,7 +46,7 @@ class Module
 
         if ($melisRoute) {
             //Back Office attach listeners for Melis
-            $eventManager->attach(new MelisCmsSiteRobotFlashMessengerListener());
+            (new MelisCmsSiteRobotFlashMessengerListener())->attach($eventManager);
         }
     }
 
@@ -100,7 +100,7 @@ class Module
     public function getAutoloaderConfig()
     {
         return array(
-            'Zend\Loader\StandardAutoloader' => array(
+            'Laminas\Loader\StandardAutoloader' => array(
                 'namespaces' => array(
                     __NAMESPACE__ => __DIR__ . '/src/' . __NAMESPACE__,
                 ),
