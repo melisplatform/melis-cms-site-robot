@@ -13,13 +13,13 @@ if (!empty($this->zoneconfig['conf']['id']))
                 <div class="widget-head">
                     <ul class="nav nav-tabs">
                         <li class="nav-item active">
-                            <a data-bs-target="#<?php echo $this->zoneconfig['conf']['id'] ?>" href="#<?php echo $this->zoneconfig['conf']['id'] ?>" class="nav-link glyphicons pencil" data-bs-toggle="tab" aria-expanded="true"><i></i> <?php echo $this->title ?></a>
+                            <a href="#<?php echo $this->zoneconfig['conf']['id'] ?>" class="nav-link glyphicons pencil" data-bs-toggle="tab" aria-expanded="true"><i></i> <?php echo $this->title ?></a>
                         </li>
                     </ul>
                 </div>
                 <div class="widget-body innerAll inner-2x">
                     <p><?= $this->desc ?></p>
-                    <div class="tab-content"><br/>
+                    <div class="tab-content">
                         <div class="tab-pane active" id="<?php echo $id ?>">
                             <?php
                                 $form = $this->form;
@@ -28,7 +28,7 @@ if (!empty($this->zoneconfig['conf']['id']))
                                 echo $this->melisFieldCollection($form);
                             ?>
                                 <div class="footer-modal d-flex flex-row justify-content-between">
-                                    <button data-bs-dismiss="modal" class="btn btn-danger float-left"><i class="fa fa-times"></i> <?php echo $this->translate('tr_site_robot_modal_cancel')?></button>
+                                    <button type="button" data-bs-dismiss="modal" class="btn btn-danger float-left"><i class="fa fa-times"></i> <?php echo $this->translate('tr_site_robot_modal_cancel')?></button>
                                     <button type="submit" class="btn btn-success" id="btn-save-site-robot"><i class="fa fa-save"></i>  <?php echo $this->translate('tr_site_robot_modal_save') ?></button>
                                 </div>
                                 <div class="clearfix"></div>
