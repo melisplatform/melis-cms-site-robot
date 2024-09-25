@@ -15,7 +15,7 @@ $(function() {
             var $this   = $(this),
                 id      = $this.parents("tr").attr("id");
 
-                window.parent.melisHelper.createModal(zoneId, melisKey, false, {id: id}, modalUrl, function() {
+                melisHelper.createModal(zoneId, melisKey, false, {id: id}, modalUrl, function() {
                     melisCoreTool.done(".btn-edit-domain");
                 });
         });
