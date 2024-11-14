@@ -47,7 +47,12 @@ $(function() {
                     dataType    : 'json',
                 }).done(function(data){
                     if(data.success) {
-                        $("div.modal").modal("hide");
+                        // $("div.modal").modal("hide");
+                        var modalId = $("div.modal").attr("id");
+                            if (modalId != "" && modalId != "undefined") {
+                                melisCoreTool.hideModal(modalId);
+                            }
+
                         // triggers the refresh button in the filter bar
                         $("#" + activeTabId + " .melis-refreshTable").trigger("click");
                         melisHelper.melisOkNotification(data.title, data.message);
