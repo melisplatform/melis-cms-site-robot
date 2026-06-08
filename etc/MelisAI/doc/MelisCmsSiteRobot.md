@@ -2,246 +2,129 @@
 title: MelisCmsSiteRobot module
 package: melisplatform/melis-cms-site-robot
 doc_type: module-documentation
-audience: ai
+audience: [users, developers, ai]
 language: en
-module_version: unversioned   # no `version` field in composer.json; this doc tracks the current source
+module_version: unversioned
 last_reviewed: 2026-06-08
 maintainer: Melis Technology
-keywords: [robots.txt, robots, seo, crawlers, site, domain, cms, melis, back-office]
+keywords: [robots.txt, robots, seo, crawlers, search-engines, site, domain, cms, melis, back-office]
 screenshots_dir: ./images
 ---
 
-# MelisCmsSiteRobot Module — Functional Documentation (for AI)
+# MelisCmsSiteRobot — Functional & Technical Documentation (for AI)
 
-> **Purpose of this document**: describe, functionally and technically, the
-> `melisplatform/melis-cms-site-robot` module, so that an AI (or a developer) can
-> understand *what the module does*, *which tools it provides*, *how they work* and
-> *where the corresponding code lives*.
+> **What this is.** MelisCmsSiteRobot lets you **manage the `robots.txt` of each site domain**
+> from the back-office and serves it **dynamically** at `https://<domain>/robots.txt` — straight
+> from the database, with no static file to maintain.
 >
-> **Audience**: consumed by the **MelisAI** module (a MelisPlatform module that exposes an
-> MCP function to answer user questions). MelisAI fetches this `.md` file and the
-> screenshots in `./images/` **on demand** — so the doc is self-contained and §9 acts as
-> the filename→content index for retrieving a specific screenshot.
->
-> **Status**: reviewed 2026-06-08 against the current source. The module carries no
-> semantic version (no `version` in `composer.json`), so treat this doc as describing the
-> current `melisplatform/melis-cms-site-robot` source rather than a tagged release.
->
-> Screenshots live in `./images/` (relative paths `./images/...`).
+> **Two parts:** **[Part A — Functional Guide](#part-a--functional-guide)** (users) ·
+> **[Part B — Technical Reference](#part-b--technical-reference)** (developers/AI, with examples).
+> Consumed by the **MelisAI** MCP; the **[Screenshot index](#screenshot-index)** maps filenames.
+> Reviewed 2026-06-08.
 
 ---
+---
 
-## 1. Overview
+# PART A — Functional Guide
 
-`MelisCmsSiteRobot` adds the ability to **manage a `robots.txt` per site domain** and to
-**serve it dynamically** from the front-office. Editors edit, per domain, the text that
-search-engine crawlers receive at `https://<domain>/robots.txt`; the module stores it in
-the database and returns it on request — no static file to maintain on disk.
+## A1. What it lets you do
+
+`robots.txt` is the small file search-engine crawlers read to know which parts of your site they
+may index. This tool lets you **edit that file per domain** from the back-office, and it's served
+live — so changes take effect immediately, with no developer or file upload needed.
+
+## A2. The Site Robot tool
+
+**Where:** back-office left menu → **CMS** tools → **Site robots** (server icon).
+
+You get a **list of your site domains** (id, site, domain). There's **no "Add"** — the list is
+the set of domains your platform already has (**one row per domain**); you only **edit** them.
+
+![Site Robot tool — the domains list](./images/meliscmssiterobot-tool-robots-list.png)
+*The list of site domains — one row per domain; filter and edit.*
+
+Click **Edit** on a domain to open its `robots.txt`: the domain is shown (read-only) and a large
+text area holds the **robots.txt content** for that domain. Save it, and it's served live at that
+domain's `/robots.txt`.
+
+![Edit robots.txt](./images/meliscmssiterobot-tool-robots-edit.png)
+*The edit modal — write the robots.txt body for the domain.*
+
+## A3. Common tasks — "How do I…?"
+
+- **Block crawlers from a folder** → Site robots → edit the domain → add a `Disallow:` line → save.
+- **Point crawlers to your sitemap** → add a `Sitemap: https://<domain>/sitemap.xml` line.
+- **Check what's served** → visit `https://<domain>/robots.txt`.
+
+---
+---
+
+# PART B — Technical Reference
+
+## B1. Metadata & dependencies
 
 | Item | Value |
 |---|---|
-| Package name | `melisplatform/melis-cms-site-robot` |
-| Type | `melisplatform-module` |
-| PHP namespace | `MelisCmsSiteRobot\` → `src/` (PSR-4) |
-| Melis category | `cms` |
-| License | OSL-3.0 |
-| PHP required | `^8.1 | ^8.3` |
-| Framework | Laminas (ex-Zend Framework 2/3), Melis MVC architecture |
-| dbdeploy | `true` (DB migrations applied automatically) |
+| Package | `melisplatform/melis-cms-site-robot` · category `cms` · namespace `MelisCmsSiteRobot\` · dbdeploy |
+| Requires | `melis-core`, `melis-cms` (`^5.2`) (uses `melis-engine` table gateways at runtime) |
 
-### Dependencies (required Melis modules)
+## B2. Data model
 
-Declared in `composer.json`:
-
-- `melisplatform/melis-core` (`^5.2`) — foundation, services, events, rights, translations
-- `melisplatform/melis-cms` (`^5.2`) — CMS, sites/domains
-
-> The `README.md` lists `melis-engine` as a prerequisite; the **table gateways** used to
-> read/write robots data (`MelisEngineTableRobot`, `MelisEngineTableSiteDomain`) live in
-> **melis-engine**, which the module relies on at runtime. It comes in through the standard
-> Melis platform install.
-
----
-
-## 2. Functional concepts
-
-- **Robots text per domain**: each **site domain** can have a stored `robots.txt` body
-  (`robot_text`) keyed by the domain name (`robot_site_domain`).
-- **Dynamic serving**: a dedicated front route `/robots.txt` returns the stored text for the
-  **requesting domain** (rather than serving a static file). If a domain has no entry, the
-  response is empty/default.
-- **Per-site management**: the back-office tool lists every site domain (joined with its
-  site) so editors can edit each domain's robots text from one place.
-
-### Data model (MySQL table)
-
-| Table | Role | Primary key |
+| Table | Role | PK |
 |---|---|---|
-| `melis_cms_domain_robots` | The `robots.txt` body for a domain (`robot_site_domain`, `robot_text`) | `robot_id` |
+| `melis_cms_domain_robots` | The robots.txt body for a domain: `robot_site_domain`, `robot_text` | `robot_id` |
 
-- The tool lists **site domains** (engine's site-domain table, columns `sdom_id`,
-  `site_label`, `sdom_domain`) and links each to its `melis_cms_domain_robots` row.
-- MySQL Workbench model: `install/sql/Model/MelisSiteRobot.mwb`
-- Base structure: `install/sql/setup_structure.sql`
-- Incremental migrations: `install/dbdeploy/*.sql`
+The tool lists **site domains** (engine's site-domain table: `sdom_id`, `site_label`,
+`sdom_domain`) and links each to its `melis_cms_domain_robots` row.
 
----
+## B3. Dynamic `/robots.txt` route & data access (with example)
 
-## 3. Tools and elements provided
-
-The module exposes:
-
-1. **The Site Robot tool (back-office)** — list domains + edit each domain's robots.txt
-2. **A dynamic `/robots.txt` front route** — serves the stored text per domain
-
-Everything is driven by a single controller: `src/Controller/ToolSiteRobotController.php`.
-
----
-
-### 3.1 Site Robot tool (back-office)
-
-Accessible from the Melis back-office left menu, **CMS** tools tree section (icon
-`fa-server`). Declared in `config/app.interface.php` (key `site_robot_tool_display`).
-
-- **Controller**: `src/Controller/ToolSiteRobotController.php`
-- **Table configuration**: `config/app.tools.php` (key `melissiterobot_tool_templates`)
-- **Views**: `view/melis-cms-site-robot/tool-site-robot/*.phtml`
-
-A Melis DataTable of **site domains** with columns: domain id (`sdom_id`), site
-(`site_label`), domain (`sdom_domain`). Filters: **limit**, **choose sites**
-(`toolSiteRobotContentFiltersSitesAction`) on the left; **search** (center); **refresh**
-(right). Data loads via AJAX from
-`/melis/MelisCmsSiteRobot/ToolSiteRobot/getSiteRobotData` (`getSiteRobotDataAction`).
-
-There is **no "Add new"** action: the rows are not created by the user — there is **one
-entry per existing site domain** (the list mirrors the platform's site domains). You only
-**Edit** an existing row; the domain itself is read-only.
-
-Per-row action: **Edit** (`toolContentTableActionEditAction`) opens a modal
-(`toolModalContainerAction` / `toolModalContentAction`, form `site_robot_form`) with the
-**domain** (read-only) and a **`robot_text`** textarea — the full robots.txt body for that
-domain. Saving goes through `saveSiteRobotAction` → upserts the domain's
-`melis_cms_domain_robots` row (the robots row is created on first save if absent).
-
-![Site Robot tool — the list of site domains](./images/meliscmssiterobot-tool-robots-list.png)
-*Caption: the Site Robot tool — a table of every site domain (id, site, domain) with limit,
-site-chooser and search filters, and a per-row Edit action.*
-
-![Site Robot tool — edit robots.txt modal](./images/meliscmssiterobot-tool-robots-edit.png)
-*Caption: the edit modal — the (read-only) domain and the robots.txt text area where the
-domain's `robots.txt` body is written.*
-
----
-
-### 3.2 Dynamic `/robots.txt` front route
-
-Declared in `config/module.config.php` (route `melis-cms-site-robot-special-urls` →
-`robots_txt`): the URL **`/robots.txt`** is handled by
-`ToolSiteRobotController::toolRobotsTxtAction`, which looks up the stored `robot_text` for
-the **requesting domain** and returns it as the response (view
-`tool-site-robot/tool-robots-txt.phtml`). This is what crawlers receive — the content is
-served from the database, editable live from the tool (§3.1).
-
----
-
-### 3.3 Data access
-
-The module does not define its own service alias; data is read/written through
-**melis-engine** table gateways (see README):
+A dedicated front route `/robots.txt` (config `module.config.php`, route
+`melis-cms-site-robot-special-urls`) is handled by `ToolSiteRobotController::toolRobotsTxtAction`,
+which returns the stored text for the **requesting domain**. The module has no own service; it
+reads/writes through **melis-engine** gateways:
 
 ```php
-// Site domains (to list in the tool)
-$table = $this->getServiceManager()->get('MelisEngineTableSiteDomain');
-$data  = $table->getData($searchValue, $searchableCols, $selColOrder, $orderDirection, $start, $length)->toArray();
+// list domains for the tool:
+$domains = $sm->get('MelisEngineTableSiteDomain')
+              ->getData($search, $cols, $colOrder, $dir, $start, $len)->toArray();
 
-// robots.txt content + data for a given domain
-$robotTable = $this->getServiceManager()->get('MelisEngineTableRobot');
-$robotData  = (array) $robotTable->getEntryByField('robot_site_domain', $domainName)->current();
+// the robots.txt for a domain (MelisEngineTableRobot maps melis_cms_domain_robots):
+$robot = (array) $sm->get('MelisEngineTableRobot')
+                    ->getEntryByField('robot_site_domain', $domainName)->current();
+echo $robot['robot_text'] ?? '';
 ```
 
-`MelisEngineTableRobot` maps to this module's `melis_cms_domain_robots` table.
+## B4. The tool
 
----
+`ToolSiteRobotController` drives everything: `toolContainerAction` (layout),
+`getSiteRobotDataAction` (the domains DataTable feed), `toolContentTableActionEditAction` (the
+edit button), `toolModalContentAction` (the edit modal, form `site_robot_form` = read-only domain
++ `robot_text` textarea), `saveSiteRobotAction` (upsert into `melis_cms_domain_robots` — the row
+is created on first save if absent), `toolSiteRobotContentFiltersSitesAction` (the site filter).
+The only row action is **Edit** (no add/delete-row). Menu/tool in `config/app.interface.php` /
+`config/app.tools.php`. Listener: `MelisCmsSiteRobotFlashMessengerListener` (back-office).
 
-## 4. Extensions and integrations
-
-### 4.1 Listener (`src/Listener/`)
-
-| Listener | Role |
-|---|---|
-| `MelisCmsSiteRobotFlashMessengerListener` | Back-office interface flash messages (attached only on the back-office route) |
-
-### 4.2 Diagnostic
-
-- `config/diagnostic.config.php` — module health checks (Melis diagnostic system).
-
----
-
-## 5. Front assets
-
-Declared in `config/app.interface.php` (key `ressources`) and `module.config.php`
-(`asset_manager`):
-
-- **JS**: `public/js/site-robot.tool.js`
-- **CSS**: `public/css/site-robot.style.css`
-- **Compiled bundle**: `public/build/css/bundle.css`, `public/build/js/bundle.js`
-
----
-
-## 6. Internationalization
-
-- Translation files: `language/en_EN.interface.php`, `language/fr_FR.interface.php`
-- Interface keys use `tr_site_robot_*` / `tr_sdom_*` / `tr_robot_text` prefixes.
-- Translation loading: `Module::createTranslations()`.
-
----
-
-## 7. Quick code map
+## B5. Quick code map
 
 ```
 melis-cms-site-robot/
-├── composer.json                 → module dependencies & metadata (dbdeploy: true)
-├── config/
-│   ├── module.config.php         → routes (incl. the /robots.txt front route), controller, asset manager
-│   ├── app.interface.php         → back-office menu + the Site Robot tool layout
-│   ├── app.tools.php             → the domains DataTable + the edit form (domain + robot_text)
-│   └── diagnostic.config.php     → diagnostic tests
-├── src/
-│   ├── Module.php                → bootstrap, flash listener, translations
-│   ├── Controller/               → ToolSiteRobotController (tool + the /robots.txt action)
-│   └── Listener/                 → MelisCmsSiteRobotFlashMessengerListener
-├── view/                         → .phtml templates (tool list, edit modal, robots-txt output)
-├── public/                       → JS/CSS assets + bundles
-├── language/                     → en_EN / fr_FR translations
-├── install/                      → SQL (structure, MWB model, dbdeploy migration)
-└── etc/                          → MarketPlace (xml) + MelisAI/doc (this doc)
+├── config/   module.config.php (routes incl. /robots.txt) · app.interface.php · app.tools.php
+├── src/   Controller/ToolSiteRobotController · Listener/MelisCmsSiteRobotFlashMessengerListener
+├── view/ · public/ · language/ · install/ (SQL)
+└── etc/   MarketPlace + MelisAI/doc (this doc)
 ```
 
 ---
 
-## 8. Typical lifecycle
-
-1. **Open** the Site Robot tool (back-office → CMS tools → Site robots).
-2. **Pick a domain** from the list (optionally filter by site / search).
-3. **Edit** that domain's `robots.txt` body in the modal textarea → `saveSiteRobotAction`
-   → `melis_cms_domain_robots`.
-4. **Serve**: a crawler requesting `https://<domain>/robots.txt` hits `toolRobotsTxtAction`,
-   which returns the stored text for that domain — live, no static file.
-
----
-
-## 9. Screenshot index (for on-demand retrieval)
-
-All screenshots live in `./images/` (i.e. `/etc/MelisAI/doc/images/`). This table is the
-**filename → content** index the MelisAI MCP uses to fetch a specific screenshot on demand;
-each row's caption in the body gives the text-only description of what the image shows.
+## Screenshot index
 
 | Image file | Content |
 |---|---|
-| `meliscmssiterobot-tool-robots-list.png` | Site Robot tool — the list of site domains (id, site, domain) with filters |
-| `meliscmssiterobot-tool-robots-edit.png` | Site Robot tool — edit modal (domain + robots.txt textarea) |
+| `meliscmssiterobot-tool-robots-list.png` | Site Robot tool — the list of site domains |
+| `meliscmssiterobot-tool-robots-edit.png` | Edit modal — domain + robots.txt textarea |
 
 ---
 
-*Document for AI consumption (MelisAI MCP) — describes the `melisplatform/melis-cms-site-robot`
-module. Last reviewed 2026-06-08 against the current source.*
+*Document for AI consumption (MelisAI MCP) — `melisplatform/melis-cms-site-robot`. Part A =
+functional; Part B = technical with examples. Last reviewed 2026-06-08.*
