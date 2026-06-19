@@ -1,0 +1,8 @@
+{
+  "id": "siterobot",
+  "route": "/melis-cms/site-robot",
+  "label": "Robots",
+  "forwardKey": "MelisCmsSiteRobot/ToolSiteRobot",
+  "melisKey": "site_robot_tool_display",
+  "entry": "brick.js"
+}
