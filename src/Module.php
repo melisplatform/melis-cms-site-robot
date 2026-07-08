@@ -85,6 +85,10 @@ class Module
         $config = array();
         $configFiles = array(
             include __DIR__ . '/../config/module.config.php',
+            // React back-office JSON API (owned by the module)
+            include __DIR__ . '/../config/react-api.php',
+            // Droits avancés (capacités) du back-office React
+            include __DIR__ . '/../config/react.capabilities.php',
             include __DIR__ . '/../config/app.interface.php',
             include __DIR__ . '/../config/app.tools.php',
             include __DIR__ . '/../config/diagnostic.config.php',
