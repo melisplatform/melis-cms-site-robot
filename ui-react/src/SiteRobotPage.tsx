@@ -44,6 +44,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     col_id: 'ID', col_domain: 'Domaine', col_site: 'Site', col_env: 'Env.', col_robots: 'robots.txt',
     robots_yes: 'Défini', robots_no: 'Aucun',
     columns: 'Colonnes', export: 'Exporter', cols_visible: 'Visibles', cols_hidden: 'Masquées', drag_here: 'Glisser ici', reset: 'Réinitialiser',
+    reset_filters: 'Réinitialiser les filtres',
     edit: 'Éditer le robots.txt', del: 'Effacer le robots.txt', cancel: 'Annuler', save: 'Enregistrer', back: 'retour',
     refresh: 'Rafraîchir', loading: 'Chargement…', saved: 'Enregistré ✓',
     del_title: 'Effacer le robots.txt', del_confirm: 'Effacer le robots.txt du domaine « {n} » ? Le domaine n’est pas supprimé.',
@@ -62,6 +63,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     col_id: 'ID', col_domain: 'Domain', col_site: 'Site', col_env: 'Env.', col_robots: 'robots.txt',
     robots_yes: 'Set', robots_no: 'None',
     columns: 'Columns', export: 'Export', cols_visible: 'Visible', cols_hidden: 'Hidden', drag_here: 'Drag here', reset: 'Reset',
+    reset_filters: 'Reset filters',
     edit: 'Edit robots.txt', del: 'Clear robots.txt', cancel: 'Cancel', save: 'Save', back: 'back',
     refresh: 'Refresh', loading: 'Loading…', saved: 'Saved ✓',
     del_title: 'Clear robots.txt', del_confirm: 'Clear the robots.txt of domain “{n}”? The domain itself is not deleted.',
@@ -100,6 +102,7 @@ const sIcon = { width: 15, height: 15, flexShrink: 0 } as const
 const PencilIcon = () => <svg style={sIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
 const TrashIcon = () => <svg style={sIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /></svg>
 const GripIcon = () => <svg style={{ width: 13, height: 13, flexShrink: 0, color: 'var(--color-muted-foreground)' }} viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5" /><circle cx="15" cy="6" r="1.5" /><circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" /><circle cx="9" cy="18" r="1.5" /><circle cx="15" cy="18" r="1.5" /></svg>
+const ResetIcon = () => <svg style={sIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v6h6" /><path d="M3 13a9 9 0 1 0 3-7.7L3 8" /></svg>
 
 // ── Colonnes (masquer + réordonner, persisté) ──
 type ColDef = { id: string; visible: boolean }
@@ -255,6 +258,18 @@ function DomainList({ base }: { base: string }) {
 
   const sorted = useMemo(() => [...items].sort((a, b) => (sortAsc ? a.id - b.id : b.id - a.id)), [items, sortAsc])
 
+  // Réinitialise recherche + site + tri par défaut, puis recharge. `setItems([])` est obligatoire :
+  // sans ça les anciennes lignes restent affichées et le clic paraît sans effet.
+  // `tick` est bumpé pour forcer le refetch même quand aucun filtre n'était posé.
+  function resetFilters() {
+    setSearchInput('')
+    setSearch('')
+    setSite(null)
+    setSortAsc(false)
+    setItems([])
+    setTick((x) => x + 1)
+  }
+
   async function confirmDelete() {
     if (!toDelete) return
     try { await deleteRobot(toDelete.id); setToDelete(null); setTick((x) => x + 1) }
@@ -303,6 +318,7 @@ function DomainList({ base }: { base: string }) {
             <option value="">{t('all_sites')}</option>
             {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
+          <button style={{ ...btnGhost, height: 36 }} onClick={resetFilters}><ResetIcon />{t('reset_filters')}</button>
           <div style={{ position: 'relative' }}>
             <button style={{ ...btnGhost, height: 36 }} onClick={() => setShowCols((v) => !v)}><GripIcon />{t('columns')}</button>
             {showCols && <ColManager cols={cols} labelFor={(id) => t(COL_LABEL[id])} onChange={setCols} onClose={() => setShowCols(false)} />}

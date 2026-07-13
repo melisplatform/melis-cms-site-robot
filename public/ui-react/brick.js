@@ -630,6 +630,7 @@
 			cols_hidden: "Masquées",
 			drag_here: "Glisser ici",
 			reset: "Réinitialiser",
+			reset_filters: "Réinitialiser les filtres",
 			edit: "Éditer le robots.txt",
 			del: "Effacer le robots.txt",
 			cancel: "Annuler",
@@ -673,6 +674,7 @@
 			cols_hidden: "Hidden",
 			drag_here: "Drag here",
 			reset: "Reset",
+			reset_filters: "Reset filters",
 			edit: "Edit robots.txt",
 			del: "Clear robots.txt",
 			cancel: "Cancel",
@@ -861,6 +863,16 @@
 				r: "1.5"
 			})
 		]
+	});
+	var ResetIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
+		style: sIcon,
+		viewBox: "0 0 24 24",
+		fill: "none",
+		stroke: "currentColor",
+		strokeWidth: "2",
+		strokeLinecap: "round",
+		strokeLinejoin: "round",
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M3 2v6h6" }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M3 13a9 9 0 1 0 3-7.7L3 8" })]
 	});
 	var COL_ORDER = [
 		"id",
@@ -1245,6 +1257,14 @@
 			if (consumeRobotListStale()) setTick((x) => x + 1);
 		}, []);
 		const sorted = (0, react.useMemo)(() => [...items].sort((a, b) => sortAsc ? a.id - b.id : b.id - a.id), [items, sortAsc]);
+		function resetFilters() {
+			setSearchInput("");
+			setSearch("");
+			setSite(null);
+			setSortAsc(false);
+			setItems([]);
+			setTick((x) => x + 1);
+		}
 		async function confirmDelete() {
 			if (!toDelete) return;
 			try {
@@ -1398,6 +1418,14 @@
 										value: s.id,
 										children: s.name
 									}, s.id))]
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
+									style: {
+										...btnGhost,
+										height: 36
+									},
+									onClick: resetFilters,
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(ResetIcon, {}), t("reset_filters")]
 								}),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 									style: { position: "relative" },
