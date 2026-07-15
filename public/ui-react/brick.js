@@ -940,12 +940,32 @@
 		letterSpacing: ".06em",
 		color: "var(--color-muted-foreground)"
 	};
-	function ColManager({ cols, labelFor, onChange, onClose }) {
+	function ColManager({ anchorRef, cols, labelFor, onChange, onClose }) {
 		const t = useT();
 		const [dragId, setDragId] = (0, react.useState)(null);
 		const [over, setOver] = (0, react.useState)(null);
+		const [pos, setPos] = (0, react.useState)(null);
 		const shown = cols.filter((c) => c.visible);
 		const hidden = cols.filter((c) => !c.visible);
+		(0, react.useLayoutEffect)(() => {
+			const anchor = anchorRef.current;
+			if (!anchor) return;
+			const rect = anchor.getBoundingClientRect();
+			const margin = 8;
+			const spaceBelow = window.innerHeight - rect.bottom - margin;
+			const spaceAbove = rect.top - margin;
+			const right = Math.max(margin, window.innerWidth - rect.right);
+			if (spaceBelow >= 200 || spaceBelow >= spaceAbove) setPos({
+				top: rect.bottom + 6,
+				right,
+				maxHeight: Math.max(160, spaceBelow - 6)
+			});
+			else setPos({
+				bottom: window.innerHeight - rect.top + 6,
+				right,
+				maxHeight: Math.max(160, spaceAbove - 6)
+			});
+		}, [anchorRef]);
 		function drop(panel) {
 			if (!dragId) return;
 			const upd = {
@@ -1024,16 +1044,20 @@
 				})]
 			}, col.id);
 		}
+		if (!pos) return null;
 		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			style: {
 				...card,
-				position: "absolute",
-				right: 0,
-				top: "100%",
-				marginTop: 6,
+				position: "fixed",
+				right: pos.right,
 				zIndex: 50,
 				width: 380,
-				maxWidth: "calc(100vw - 1rem)"
+				maxWidth: "calc(100vw - 1rem)",
+				maxHeight: pos.maxHeight,
+				overflowY: "auto",
+				display: "flex",
+				flexDirection: "column",
+				...pos.top != null ? { top: pos.top } : { bottom: pos.bottom }
 			},
 			children: [
 				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
@@ -1238,6 +1262,7 @@
 		const [toDelete, setToDelete] = (0, react.useState)(null);
 		const [tick, setTick] = (0, react.useState)(0);
 		const [cols, setCols] = (0, react.useState)(loadCols);
+		const colsAnchorRef = (0, react.useRef)(null);
 		const [showCols, setShowCols] = (0, react.useState)(false);
 		const [showExport, setShowExport] = (0, react.useState)(false);
 		const [mode, setMode] = (0, react.useState)("react");
@@ -1434,6 +1459,7 @@
 									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(ResetIcon, {}), t("reset_filters")]
 								}),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+									ref: colsAnchorRef,
 									style: { position: "relative" },
 									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
 										style: {
@@ -1443,6 +1469,7 @@
 										onClick: () => setShowCols((v) => !v),
 										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(GripIcon, {}), t("columns")]
 									}), showCols && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ColManager, {
+										anchorRef: colsAnchorRef,
 										cols,
 										labelFor: (id) => t(COL_LABEL[id]),
 										onChange: setCols,
