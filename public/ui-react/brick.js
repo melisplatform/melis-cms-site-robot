@@ -611,7 +611,7 @@
 	}
 	var DICT = {
 		fr: {
-			title: "Robots",
+			title: "Robots.txt",
 			subtitle: "Fichier robots.txt par domaine de site",
 			search: "Rechercher un domaine…",
 			empty: "Aucun domaine trouvé",
@@ -655,7 +655,7 @@
 			no_access: "Vous n’avez pas les droits pour consulter cette liste."
 		},
 		en: {
-			title: "Robots",
+			title: "Robots.txt",
 			subtitle: "Per-domain robots.txt file",
 			search: "Search a domain…",
 			empty: "No domain found",

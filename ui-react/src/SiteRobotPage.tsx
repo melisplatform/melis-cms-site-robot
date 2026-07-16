@@ -37,7 +37,7 @@ function currentLang(): Lang {
 }
 const DICT: Record<Lang, Record<string, string>> = {
   fr: {
-    title: 'Robots', subtitle: 'Fichier robots.txt par domaine de site',
+    title: 'Robots.txt', subtitle: 'Fichier robots.txt par domaine de site',
     search: 'Rechercher un domaine…', empty: 'Aucun domaine trouvé', count: '{n} domaines — fin de la liste',
     kpi_total: 'Domaines', kpi_with: 'Avec robots.txt', kpi_without: 'Sans robots.txt',
     all_sites: 'Tous les sites',
@@ -56,7 +56,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     no_access: 'Vous n’avez pas les droits pour consulter cette liste.',
   },
   en: {
-    title: 'Robots', subtitle: 'Per-domain robots.txt file',
+    title: 'Robots.txt', subtitle: 'Per-domain robots.txt file',
     search: 'Search a domain…', empty: 'No domain found', count: '{n} domains — end of list',
     kpi_total: 'Domains', kpi_with: 'With robots.txt', kpi_without: 'Without robots.txt',
     all_sites: 'All sites',
