@@ -16,11 +16,17 @@ import { ViewToggle } from './ViewToggle'
  * modules de l'hôte : styles inline + variables CSS du thème, mini-dico FR/EN via <html lang>.
  * ────────────────────────────────────────────────────────────────────────── */
 
-const MELIS_KEY = 'site_robot_tool_display' // zone rendable legacy (vue « Old » en iframe) + garde de droits
+// Renderable legacy zone ("Old" iframe view). Stays the `conf.type` target's melisKey.
+const MELIS_KEY = 'site_robot_tool_display'
+
+// Capability key — must match config/react.capabilities.php, i.e. the melisKey of the
+// rights-bearing menu node. Distinct from MELIS_KEY above: the zone key is not what rights
+// hang on, so using it here would silently default-allow every capability.
+const CAPS_KEY = 'meliscms_site_robot_tools_section'
 
 // Capacités : lit window.MelisCan (default-allow ; l'API reste gardée côté serveur).
 function can(cap: string): boolean {
-  return (window as unknown as { MelisCan?: (k: string, c: string) => boolean }).MelisCan?.(MELIS_KEY, cap) ?? true
+  return (window as unknown as { MelisCan?: (k: string, c: string) => boolean }).MelisCan?.(CAPS_KEY, cap) ?? true
 }
 
 // API sous-onglets de l'hôte (manifest subTabs:true) — sinon l'édition ouvrirait un onglet top-level « id ».

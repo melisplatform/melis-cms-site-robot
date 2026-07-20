@@ -603,8 +603,9 @@
 	//#endregion
 	//#region src/SiteRobotPage.tsx
 	var MELIS_KEY = "site_robot_tool_display";
+	var CAPS_KEY = "meliscms_site_robot_tools_section";
 	function can(cap) {
-		return window.MelisCan?.(MELIS_KEY, cap) ?? true;
+		return window.MelisCan?.(CAPS_KEY, cap) ?? true;
 	}
 	function currentLang() {
 		return (document.documentElement.lang || "en").toLowerCase().startsWith("fr") ? "fr" : "en";

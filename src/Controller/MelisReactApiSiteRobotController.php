@@ -28,8 +28,13 @@ class MelisReactApiSiteRobotController extends MelisAbstractActionController
 {
     use CapabilityGuardTrait;
 
-    /** melisKey de l'outil (nœud menu / garde de droits). */
-    private const MELIS_KEY = 'site_robot_tool_display';
+    /** melisKey of the RIGHTS-BEARING menu node — the access guard AND the capability key.
+     *  MUST stay in sync with config/react.capabilities.php: denyUnlessCan() resolves capabilities
+     *  through this constant, so a mismatch makes every server-side capability check silently
+     *  default-allow. NOT `site_robot_tool_display` — that is the `conf.type` target, kept as the
+     *  renderable ZONE key (iframe); it is not granted on its own, so guarding on it would 403
+     *  every request. */
+    private const MELIS_KEY = 'meliscms_site_robot_tools_section';
 
     // ─── GET /site-robots ─────────────────────────────────────────────────────────
 

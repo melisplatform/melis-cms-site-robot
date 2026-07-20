@@ -18,10 +18,31 @@ return array(
                                         'melisKey' => 'meliscms_site_robot_tools',
                                     ),
                                     'interface' => [
-                                        'melis_cms_site_robots_config' => array(
+                                        // Rights-bearing node of the Site Robots menu entry, shaped
+                                        // like MelisCmsSlider / MelisCmsNews / MelisCmsCategory2.
+                                        //
+                                        // It used to carry ONLY the `conf.type` link, so the key it
+                                        // resolved to (`site_robot_tool_display`) was declared on the
+                                        // target, in the `melis_cms_site_robots` plugin root. A wrapper
+                                        // is inferred via configIsParentOf, which matches it against
+                                        // SEGMENTS OF THE GRANTED TOOL'S CONFIG PATH — and that target
+                                        // path (/melis_cms_site_robots/interface/site_robot_tool_display)
+                                        // never runs through `meliscms_site_robot_tools`. So the wrapper
+                                        // stayed denied and TreeToolsController:73 dropped the subtree:
+                                        // invisible in the legacy menu for non-admins even when granted,
+                                        // while React (which gates on the leaf) showed it.
+                                        //
+                                        // Declaring the melisKey HERE puts the rights key back on the
+                                        // left-menu path, which does run through the wrapper.
+                                        // The `conf.type` link still pulls in the target's forward.
+                                        'meliscms_site_robot_tools_section' => array(
                                             'conf' => array(
+                                                'id'   => 'id_meliscms_site_robot_tools_section',
                                                 'type' => '/melis_cms_site_robots/interface/site_robot_tool_display',
                                                 'name' => 'tr_site_robot_title',
+                                                'icon' => 'fa-server',
+                                                'rights_checkbox_disable' => false,
+                                                'melisKey' => 'meliscms_site_robot_tools_section',
                                             )
                                         ),
                                     ]
