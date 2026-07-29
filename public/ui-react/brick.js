@@ -22,8 +22,10 @@
 		const qs = new URLSearchParams();
 		if (params.search) qs.set("search", params.search);
 		if (params.site) qs.set("site", String(params.site));
-		qs.set("page", String(params.page ?? 1));
-		qs.set("limit", String(params.limit ?? 50));
+		if (params.limit != null) qs.set("limit", String(params.limit));
+		if (params.sort) qs.set("sort", params.sort);
+		if (params.dir) qs.set("dir", params.dir);
+		if (params.after) qs.set("after", params.after);
 		return apiFetch(`/melis/react-api/site-robots?${qs}`);
 	}
 	var fetchRobotStats = () => apiFetch("/melis/react-api/site-robots/stats");
@@ -43,6 +45,117 @@
 		const s = _stale;
 		_stale = false;
 		return s;
+	}
+	//#endregion
+	//#region src/use-keyset-list.ts
+	function useKeysetList(opts) {
+		const LIMIT = opts.limit ?? 25;
+		const [items, setItems] = (0, react.useState)(opts.initial?.items ?? []);
+		const [total, setTotal] = (0, react.useState)(opts.initial?.total ?? 0);
+		const [loading, setLoading] = (0, react.useState)(false);
+		const [hasMore, setHasMore] = (0, react.useState)(opts.initial?.hasMore ?? false);
+		const [sortCol, setSortCol] = (0, react.useState)(opts.initial?.sortCol ?? opts.defaultSort ?? "id");
+		const [sortDir, setSortDir] = (0, react.useState)(opts.initial?.sortDir ?? opts.defaultDir ?? "desc");
+		const cursorRef = (0, react.useRef)(opts.initial?.cursor ?? null);
+		const loadingRef = (0, react.useRef)(false);
+		const reqIdRef = (0, react.useRef)(0);
+		const sentinelRef = (0, react.useRef)(null);
+		const fetcherRef = (0, react.useRef)(opts.fetcher);
+		fetcherRef.current = opts.fetcher;
+		const runLoad = (0, react.useCallback)(async (reset) => {
+			if (!reset && loadingRef.current) return;
+			const myReq = ++reqIdRef.current;
+			loadingRef.current = true;
+			setLoading(true);
+			const after = reset ? void 0 : cursorRef.current ?? void 0;
+			try {
+				const res = await fetcherRef.current({
+					limit: LIMIT,
+					sort: sortCol,
+					dir: sortDir,
+					after
+				});
+				if (myReq !== reqIdRef.current) return;
+				cursorRef.current = res.nextCursor;
+				setHasMore(res.nextCursor !== null);
+				setTotal(res.total);
+				setItems((prev) => reset ? res.items : [...prev, ...res.items]);
+			} catch {} finally {
+				if (myReq === reqIdRef.current) {
+					setLoading(false);
+					loadingRef.current = false;
+				}
+			}
+		}, [
+			sortCol,
+			sortDir,
+			LIMIT
+		]);
+		const didInitRef = (0, react.useRef)(false);
+		(0, react.useEffect)(() => {
+			if (!didInitRef.current) {
+				didInitRef.current = true;
+				if (opts.skipInitial) return;
+			}
+			runLoad(true);
+		}, [
+			...opts.deps,
+			sortCol,
+			sortDir
+		]);
+		(0, react.useEffect)(() => {
+			if (!sentinelRef.current || !hasMore) return;
+			const obs = new IntersectionObserver(([entry]) => {
+				if (entry.isIntersecting) runLoad(false);
+			}, { rootMargin: "120px" });
+			obs.observe(sentinelRef.current);
+			return () => obs.disconnect();
+		}, [hasMore, runLoad]);
+		const toggleSort = (0, react.useCallback)((id) => {
+			setSortCol((cur) => {
+				if (cur === id) {
+					setSortDir((d) => d === "asc" ? "desc" : "asc");
+					return cur;
+				}
+				setSortDir(id === "id" ? "desc" : "asc");
+				return id;
+			});
+		}, []);
+		/** Force un rechargement depuis le début (refresh / reset filtres). */
+		const reload = (0, react.useCallback)(() => {
+			cursorRef.current = null;
+			runLoad(true);
+		}, [runLoad]);
+		/** Retire un élément localement (après delete) sans recharger. */
+		const removeLocal = (0, react.useCallback)((pred) => {
+			setItems((prev) => prev.filter((it) => !pred(it)));
+			setTotal((t) => Math.max(0, t - 1));
+		}, []);
+		/** Snapshot pour le cache module-level. */
+		const snapshot = () => ({
+			items,
+			total,
+			cursor: cursorRef.current,
+			hasMore,
+			sortCol,
+			sortDir
+		});
+		return {
+			items,
+			setItems,
+			total,
+			loading,
+			hasMore,
+			sentinelRef,
+			sortCol,
+			sortDir,
+			setSortCol,
+			setSortDir,
+			toggleSort,
+			reload,
+			removeLocal,
+			snapshot
+		};
 	}
 	//#endregion
 	//#region src/ExportModal.tsx
@@ -603,6 +716,40 @@
 	//#endregion
 	//#region src/SiteRobotPage.tsx
 	var MELIS_KEY = "site_robot_tool_display";
+	/** Icône de tri unifiée — mêmes tracés que les icônes lucide ArrowUpDown/ArrowUp/ArrowDown du core. */
+	function SortIcon({ dir }) {
+		const p = {
+			width: 12,
+			height: 12,
+			viewBox: "0 0 24 24",
+			fill: "none",
+			stroke: "currentColor",
+			strokeWidth: 2,
+			strokeLinecap: "round",
+			strokeLinejoin: "round",
+			style: {
+				flexShrink: 0,
+				opacity: dir ? 1 : .3
+			}
+		};
+		if (dir === "asc") return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
+			...p,
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "m5 12 7-7 7 7" }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M12 19V5" })]
+		});
+		if (dir === "desc") return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
+			...p,
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M12 5v14" }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "m19 12-7 7-7-7" })]
+		});
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
+			...p,
+			children: [
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "m21 16-4 4-4-4" }),
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M17 20V4" }),
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "m3 8 4-4 4 4" }),
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M7 4v16" })
+			]
+		});
+	}
 	var CAPS_KEY = "meliscms_site_robot_tools_section";
 	function can(cap) {
 		return window.MelisCan?.(CAPS_KEY, cap) ?? true;
@@ -1252,14 +1399,11 @@
 	function DomainList({ base }) {
 		const t = useT();
 		const navigate = (0, react_router_dom.useNavigate)();
-		const [items, setItems] = (0, react.useState)([]);
 		const [stats, setStats] = (0, react.useState)(null);
 		const [sites, setSites] = (0, react.useState)([]);
-		const [loading, setLoading] = (0, react.useState)(false);
 		const [searchInput, setSearchInput] = (0, react.useState)("");
 		const [search, setSearch] = (0, react.useState)("");
 		const [site, setSite] = (0, react.useState)(null);
-		const [sortAsc, setSortAsc] = (0, react.useState)(false);
 		const [toDelete, setToDelete] = (0, react.useState)(null);
 		const [tick, setTick] = (0, react.useState)(0);
 		const [cols, setCols] = (0, react.useState)(loadCols);
@@ -1268,6 +1412,27 @@
 		const [showExport, setShowExport] = (0, react.useState)(false);
 		const [mode, setMode] = (0, react.useState)("react");
 		const [frameLoaded, setFrameLoaded] = (0, react.useState)(false);
+		const { items, total, loading, hasMore, sentinelRef, sortCol, sortDir, toggleSort } = useKeysetList({
+			fetcher: (a) => fetchDomains({
+				search,
+				site,
+				limit: a.limit,
+				sort: a.sort,
+				dir: a.dir,
+				after: a.after
+			}).then((r) => ({
+				items: r.items,
+				total: r.total,
+				nextCursor: r.nextCursor
+			})),
+			deps: [
+				search,
+				site,
+				tick
+			],
+			defaultSort: "id",
+			defaultDir: "desc"
+		});
 		(0, react.useEffect)(() => {
 			fetchRobotStats().then(setStats).catch(() => null);
 		}, [tick]);
@@ -1275,26 +1440,12 @@
 			fetchSites().then(setSites).catch(() => null);
 		}, []);
 		(0, react.useEffect)(() => {
-			setLoading(true);
-			fetchDomains({
-				search,
-				site
-			}).then((r) => setItems(r.items)).catch(() => null).finally(() => setLoading(false));
-		}, [
-			search,
-			site,
-			tick
-		]);
-		(0, react.useEffect)(() => {
 			if (consumeRobotListStale()) setTick((x) => x + 1);
 		}, []);
-		const sorted = (0, react.useMemo)(() => [...items].sort((a, b) => sortAsc ? a.id - b.id : b.id - a.id), [items, sortAsc]);
 		function resetFilters() {
 			setSearchInput("");
 			setSearch("");
 			setSite(null);
-			setSortAsc(false);
-			setItems([]);
 			setTick((x) => x + 1);
 		}
 		async function confirmDelete() {
@@ -1492,114 +1643,127 @@
 								...card,
 								overflow: "hidden"
 							},
-							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("table", {
-								style: {
-									width: "100%",
-									borderCollapse: "collapse",
-									minWidth: 640
-								},
-								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("thead", {
-									style: { background: "var(--color-muted,rgba(0,0,0,.03))" },
-									children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("tr", { children: [visibleCols(cols).map(({ id }) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("th", {
-										style: {
+							children: [
+								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("table", {
+									style: {
+										width: "100%",
+										borderCollapse: "collapse",
+										minWidth: 640
+									},
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("thead", {
+										style: { background: "var(--color-muted,rgba(0,0,0,.03))" },
+										children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("tr", { children: [visibleCols(cols).map(({ id }) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("th", {
+											style: {
+												...th,
+												cursor: "pointer",
+												...id === "id" ? { width: 70 } : {},
+												...id === "robots" ? { width: 120 } : {},
+												...sortCol === id ? { color: "var(--color-primary)" } : {}
+											},
+											onClick: () => toggleSort(id),
+											children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+												style: {
+													display: "inline-flex",
+													alignItems: "center",
+													gap: 4
+												},
+												children: [t(COL_LABEL[id]), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SortIcon, { dir: sortCol === id ? sortDir : null })]
+											})
+										}, id)), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("th", { style: {
 											...th,
-											...id === "id" ? {
-												cursor: "pointer",
-												width: 70
-											} : {},
-											...id === "robots" ? { width: 120 } : {}
-										},
-										onClick: id === "id" ? () => setSortAsc((v) => !v) : void 0,
-										children: [t(COL_LABEL[id]), id === "id" ? ` ${sortAsc ? "↑" : "↓"}` : ""]
-									}, id)), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("th", { style: {
-										...th,
-										width: 80
-									} })] })
-								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("tbody", { children: sorted.length === 0 && !loading ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("tr", { children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("td", {
-									style: {
-										...td,
-										textAlign: "center",
-										color: "var(--color-muted-foreground)",
-										padding: "40px 16px"
-									},
-									colSpan: visibleCols(cols).length + 1,
-									children: t("empty")
-								}) }) : sorted.map((r) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("tr", { children: [visibleCols(cols).map(({ id }) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("td", {
-									style: {
-										...td,
-										...id === "id" ? {
-											color: "var(--color-muted-foreground)",
-											fontVariantNumeric: "tabular-nums"
-										} : {},
-										...id === "domain" ? {
-											fontFamily: "monospace",
-											fontSize: 13
-										} : {}
-									},
-									children: [
-										id === "id" && r.id,
-										id === "domain" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-											onClick: () => navigate(`${base}/${r.id}`),
-											style: {
-												background: "transparent",
-												border: 0,
-												padding: 0,
-												color: "var(--color-foreground)",
-												fontFamily: "monospace",
-												fontSize: 13,
-												fontWeight: 600,
-												cursor: "pointer",
-												textAlign: "left"
-											},
-											children: r.scheme ? `${r.scheme}://${r.domain}` : r.domain
-										}),
-										id === "site" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-											style: { fontWeight: 500 },
-											children: r.siteName
-										}),
-										id === "env" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-											style: { color: "var(--color-muted-foreground)" },
-											children: r.env
-										}),
-										id === "robots" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(RobotsBadge, {
-											has: r.hasRobots,
-											labelOn: t("robots_yes"),
-											labelOff: t("robots_no")
-										})
-									]
-								}, id)), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("td", {
-									style: td,
-									children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+											width: 80
+										} })] })
+									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("tbody", { children: items.length === 0 && !loading ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("tr", { children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("td", {
 										style: {
-											display: "flex",
-											justifyContent: "flex-end",
-											gap: 4
+											...td,
+											textAlign: "center",
+											color: "var(--color-muted-foreground)",
+											padding: "40px 16px"
 										},
-										children: [can("edit") && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-											style: iconBtn,
-											title: t("edit"),
-											onClick: () => navigate(`${base}/${r.id}`),
-											children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PencilIcon, {})
-										}), can("delete") && r.hasRobots && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+										colSpan: visibleCols(cols).length + 1,
+										children: t("empty")
+									}) }) : items.map((r) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("tr", { children: [visibleCols(cols).map(({ id }) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("td", {
+										style: {
+											...td,
+											...id === "id" ? {
+												color: "var(--color-muted-foreground)",
+												fontVariantNumeric: "tabular-nums"
+											} : {},
+											...id === "domain" ? {
+												fontFamily: "monospace",
+												fontSize: 13
+											} : {}
+										},
+										children: [
+											id === "id" && r.id,
+											id === "domain" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+												onClick: () => navigate(`${base}/${r.id}`),
+												style: {
+													background: "transparent",
+													border: 0,
+													padding: 0,
+													color: "var(--color-foreground)",
+													fontFamily: "monospace",
+													fontSize: 13,
+													fontWeight: 600,
+													cursor: "pointer",
+													textAlign: "left"
+												},
+												children: r.scheme ? `${r.scheme}://${r.domain}` : r.domain
+											}),
+											id === "site" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+												style: { fontWeight: 500 },
+												children: r.siteName
+											}),
+											id === "env" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+												style: { color: "var(--color-muted-foreground)" },
+												children: r.env
+											}),
+											id === "robots" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(RobotsBadge, {
+												has: r.hasRobots,
+												labelOn: t("robots_yes"),
+												labelOff: t("robots_no")
+											})
+										]
+									}, id)), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("td", {
+										style: td,
+										children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 											style: {
-												...iconBtn,
-												color: "var(--color-destructive,#ef4444)"
+												display: "flex",
+												justifyContent: "flex-end",
+												gap: 4
 											},
-											title: t("del"),
-											onClick: () => setToDelete(r),
-											children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(TrashIcon, {})
-										})]
-									})
-								})] }, r.id)) })]
-							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-								style: {
-									padding: "10px 16px",
-									textAlign: "center",
-									fontSize: 12,
-									color: "var(--color-muted-foreground)"
-								},
-								children: loading ? t("loading") : t("count", { n: items.length })
-							})]
+											children: [can("edit") && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+												style: iconBtn,
+												title: t("edit"),
+												onClick: () => navigate(`${base}/${r.id}`),
+												children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PencilIcon, {})
+											}), can("delete") && r.hasRobots && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+												style: {
+													...iconBtn,
+													color: "var(--color-destructive,#ef4444)"
+												},
+												title: t("del"),
+												onClick: () => setToDelete(r),
+												children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(TrashIcon, {})
+											})]
+										})
+									})] }, r.id)) })]
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+									ref: sentinelRef,
+									style: { height: 1 }
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+									style: {
+										padding: "10px 16px",
+										textAlign: "center",
+										fontSize: 12,
+										color: "var(--color-muted-foreground)"
+									},
+									children: loading ? t("loading") : !hasMore && items.length > 0 ? t("count", { n: total }) : ""
+								})
+							]
 						})
 					] })
 				}),
@@ -1664,15 +1828,27 @@
 				showExport && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ExportModal, {
 					cols,
 					labelFor: (id) => t(COL_LABEL[id]),
-					fetchAll: async () => (await fetchDomains({
-						search,
-						site,
-						limit: 9999
-					})).items,
+					fetchAll: async () => {
+						const all = [];
+						let after = null;
+						do {
+							const r = await fetchDomains({
+								search,
+								site,
+								limit: 100,
+								sort: sortCol,
+								dir: sortDir,
+								after
+							});
+							all.push(...r.items);
+							after = r.nextCursor;
+						} while (after);
+						return all;
+					},
 					getCell: (r, id) => id === "id" ? r.id : id === "domain" ? r.domain : id === "site" ? r.siteName : id === "env" ? r.env : id === "robots" ? r.hasRobots ? t("robots_yes") : t("robots_no") : "",
 					filename: t("export_filename"),
 					sheetName: t("title"),
-					total: items.length,
+					total,
 					onClose: () => setShowExport(false)
 				})
 			]

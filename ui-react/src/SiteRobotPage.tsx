@@ -1,10 +1,11 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   fetchDomains, fetchRobotStats, fetchSites, fetchDomainById, saveRobot, deleteRobot,
   markRobotListStale, consumeRobotListStale,
   type DomainItem, type RobotStats, type SiteOption,
 } from './site-robot-api'
+import { useKeysetList } from './use-keyset-list'
 import { ExportModal, DownloadIcon } from './ExportModal'
 import { ViewToggle } from './ViewToggle'
 
@@ -18,6 +19,14 @@ import { ViewToggle } from './ViewToggle'
 
 // Renderable legacy zone ("Old" iframe view). Stays the `conf.type` target's melisKey.
 const MELIS_KEY = 'site_robot_tool_display'
+
+/** Icône de tri unifiée — mêmes tracés que les icônes lucide ArrowUpDown/ArrowUp/ArrowDown du core. */
+function SortIcon({ dir }: { dir: 'asc' | 'desc' | null }) {
+  const p = { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none' as const, stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, style: { flexShrink: 0, opacity: dir ? 1 : 0.3 } }
+  if (dir === 'asc')  return <svg {...p}><path d="m5 12 7-7 7 7" /><path d="M12 19V5" /></svg>
+  if (dir === 'desc') return <svg {...p}><path d="M12 5v14" /><path d="m19 12-7 7-7-7" /></svg>
+  return <svg {...p}><path d="m21 16-4 4-4-4" /><path d="M17 20V4" /><path d="m3 8 4-4 4 4" /><path d="M7 4v16" /></svg>
+}
 
 // Capability key — must match config/react.capabilities.php, i.e. the melisKey of the
 // rights-bearing menu node. Distinct from MELIS_KEY above: the zone key is not what rights
@@ -258,14 +267,11 @@ export default function SiteRobotPage({ active = true }: { active?: boolean }) {
 function DomainList({ base }: { base: string }) {
   const t = useT()
   const navigate = useNavigate()
-  const [items, setItems] = useState<DomainItem[]>([])
   const [stats, setStats] = useState<RobotStats | null>(null)
   const [sites, setSites] = useState<SiteOption[]>([])
-  const [loading, setLoading] = useState(false)
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [site, setSite] = useState<number | null>(null)
-  const [sortAsc, setSortAsc] = useState(false)
   const [toDelete, setToDelete] = useState<DomainItem | null>(null)
   const [tick, setTick] = useState(0)
   const [cols, setCols] = useState<ColDef[]>(loadCols)
@@ -275,26 +281,29 @@ function DomainList({ base }: { base: string }) {
   const [mode, setMode] = useState<'react' | 'iframe'>('react')
   const [frameLoaded, setFrameLoaded] = useState(false)
 
+  // Liste = scroll infini + tri server-side (keyset). `tick` (deps) relance un chargement
+  // frais (reset filtres / retour du formulaire / delete) et sert aussi de trigger aux stats.
+  const { items, total, loading, hasMore, sentinelRef, sortCol, sortDir, toggleSort } =
+    useKeysetList<DomainItem>({
+      fetcher: (a) =>
+        fetchDomains({ search, site, limit: a.limit, sort: a.sort, dir: a.dir, after: a.after })
+          .then((r) => ({ items: r.items, total: r.total, nextCursor: r.nextCursor })),
+      deps: [search, site, tick],
+      defaultSort: 'id',
+      defaultDir: 'desc',
+    })
+
   useEffect(() => { fetchRobotStats().then(setStats).catch(() => null) }, [tick])
   useEffect(() => { fetchSites().then(setSites).catch(() => null) }, [])
-  useEffect(() => {
-    setLoading(true)
-    fetchDomains({ search, site }).then((r) => setItems(r.items)).catch(() => null).finally(() => setLoading(false))
-  }, [search, site, tick])
   // Rafraîchir au retour du formulaire (liste persistante).
   useEffect(() => { if (consumeRobotListStale()) setTick((x) => x + 1) }, [])
 
-  const sorted = useMemo(() => [...items].sort((a, b) => (sortAsc ? a.id - b.id : b.id - a.id)), [items, sortAsc])
-
-  // Réinitialise recherche + site + tri par défaut, puis recharge. `setItems([])` est obligatoire :
-  // sans ça les anciennes lignes restent affichées et le clic paraît sans effet.
-  // `tick` est bumpé pour forcer le refetch même quand aucun filtre n'était posé.
+  // Réinitialise recherche + site puis recharge (bump `tick` → le hook recharge sur deps).
+  // Le tri courant est laissé inchangé (comportement acceptable ; simplicité).
   function resetFilters() {
     setSearchInput('')
     setSearch('')
     setSite(null)
-    setSortAsc(false)
-    setItems([])
     setTick((x) => x + 1)
   }
 
@@ -359,18 +368,18 @@ function DomainList({ base }: { base: string }) {
             <thead style={{ background: 'var(--color-muted,rgba(0,0,0,.03))' }}>
               <tr>
                 {visibleCols(cols).map(({ id }) => (
-                  <th key={id} style={{ ...th, ...(id === 'id' ? { cursor: 'pointer', width: 70 } : {}), ...(id === 'robots' ? { width: 120 } : {}) }}
-                    onClick={id === 'id' ? () => setSortAsc((v) => !v) : undefined}>
-                    {t(COL_LABEL[id])}{id === 'id' ? ` ${sortAsc ? '↑' : '↓'}` : ''}
+                  <th key={id} style={{ ...th, cursor: 'pointer', ...(id === 'id' ? { width: 70 } : {}), ...(id === 'robots' ? { width: 120 } : {}), ...(sortCol === id ? { color: 'var(--color-primary)' } : {}) }}
+                    onClick={() => toggleSort(id)}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>{t(COL_LABEL[id])}<SortIcon dir={sortCol === id ? sortDir : null} /></span>
                   </th>
                 ))}
                 <th style={{ ...th, width: 80 }} />
               </tr>
             </thead>
             <tbody>
-              {sorted.length === 0 && !loading ? (
+              {items.length === 0 && !loading ? (
                 <tr><td style={{ ...td, textAlign: 'center', color: 'var(--color-muted-foreground)', padding: '40px 16px' }} colSpan={visibleCols(cols).length + 1}>{t('empty')}</td></tr>
-              ) : sorted.map((r) => (
+              ) : items.map((r) => (
                 <tr key={r.id}>
                   {visibleCols(cols).map(({ id }) => (
                     <td key={id} style={{ ...td, ...(id === 'id' ? { color: 'var(--color-muted-foreground)', fontVariantNumeric: 'tabular-nums' } : {}), ...(id === 'domain' ? { fontFamily: 'monospace', fontSize: 13 } : {}) }}>
@@ -396,8 +405,9 @@ function DomainList({ base }: { base: string }) {
               ))}
             </tbody>
           </table>
+          <div ref={sentinelRef} style={{ height: 1 }} />
           <div style={{ padding: '10px 16px', textAlign: 'center', fontSize: 12, color: 'var(--color-muted-foreground)' }}>
-            {loading ? t('loading') : t('count', { n: items.length })}
+            {loading ? t('loading') : (!hasMore && items.length > 0 ? t('count', { n: total }) : '')}
           </div>
         </div>
       </>)}
@@ -420,9 +430,19 @@ function DomainList({ base }: { base: string }) {
         <ExportModal<DomainItem>
           cols={cols}
           labelFor={(id) => t(COL_LABEL[id])}
-          fetchAll={async () => (await fetchDomains({ search, site, limit: 9999 })).items}
+          fetchAll={async () => {
+            // Parcourt toute la liste par lots keyset (nextCursor) — pas de limit:9999.
+            const all: DomainItem[] = []
+            let after: string | null = null
+            do {
+              const r = await fetchDomains({ search, site, limit: 100, sort: sortCol, dir: sortDir, after })
+              all.push(...r.items)
+              after = r.nextCursor
+            } while (after)
+            return all
+          }}
           getCell={(r, id) => id === 'id' ? r.id : id === 'domain' ? r.domain : id === 'site' ? r.siteName : id === 'env' ? r.env : id === 'robots' ? (r.hasRobots ? t('robots_yes') : t('robots_no')) : ''}
-          filename={t('export_filename')} sheetName={t('title')} total={items.length}
+          filename={t('export_filename')} sheetName={t('title')} total={total}
           onClose={() => setShowExport(false)} />
       )}
     </div>

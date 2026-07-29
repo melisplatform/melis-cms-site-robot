@@ -32,14 +32,19 @@ export interface DomainDetail extends DomainItem {
 }
 export interface RobotStats { total: number; withRobots: number; withoutRobots: number }
 export interface SiteOption { id: number; name: string }
-export interface DomainListResult { items: DomainItem[]; total: number; page: number; limit: number }
+export interface DomainListResult { items: DomainItem[]; total: number; nextCursor: string | null }
 
-export function fetchDomains(params: { search?: string; site?: number | null; page?: number; limit?: number } = {}): Promise<DomainListResult> {
+export function fetchDomains(params: {
+  search?: string; site?: number | null; limit?: number
+  sort?: string; dir?: 'asc' | 'desc'; after?: string | null
+} = {}): Promise<DomainListResult> {
   const qs = new URLSearchParams()
   if (params.search) qs.set('search', params.search)
   if (params.site) qs.set('site', String(params.site))
-  qs.set('page', String(params.page ?? 1))
-  qs.set('limit', String(params.limit ?? 50))
+  if (params.limit != null) qs.set('limit', String(params.limit))
+  if (params.sort) qs.set('sort', params.sort)
+  if (params.dir) qs.set('dir', params.dir)
+  if (params.after) qs.set('after', params.after)
   return apiFetch<DomainListResult>(`/melis/react-api/site-robots?${qs}`)
 }
 

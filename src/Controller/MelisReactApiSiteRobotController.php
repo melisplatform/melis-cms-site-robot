@@ -3,6 +3,7 @@
 namespace MelisCmsSiteRobot\Controller;
 
 use MelisReactApi\Controller\CapabilityGuardTrait;
+use MelisCore\Controller\MelisReactKeysetListTrait;
 
 use Laminas\Http\PhpEnvironment\Response as HttpResponse;
 use MelisCore\Controller\MelisAbstractActionController;
@@ -27,6 +28,7 @@ use MelisCore\Controller\MelisAbstractActionController;
 class MelisReactApiSiteRobotController extends MelisAbstractActionController
 {
     use CapabilityGuardTrait;
+    use MelisReactKeysetListTrait;
 
     /** melisKey of the RIGHTS-BEARING menu node — the access guard AND the capability key.
      *  MUST stay in sync with config/react.capabilities.php: denyUnlessCan() resolves capabilities
@@ -44,47 +46,54 @@ class MelisReactApiSiteRobotController extends MelisAbstractActionController
         if ($denyCap = $this->denyUnlessCan('list')) { return $denyCap; }
 
         try {
-            $page   = max(1, (int) $this->params()->fromQuery('page', 1));
             $limit  = min(9999, max(1, (int) $this->params()->fromQuery('limit', 25)));
             $search = trim((string) ($this->params()->fromQuery('search', '') ?? ''));
             $siteId = (int) $this->params()->fromQuery('site', 0) ?: null;
-            $offset = ($page - 1) * $limit;
+            $sort   = (string) $this->params()->fromQuery('sort', 'id');
+            $dir    = (string) $this->params()->fromQuery('dir', 'desc');
+            $after  = (string) ($this->params()->fromQuery('after', '') ?? '');
 
             $db = $this->getServiceManager()->get('Laminas\Db\Adapter\AdapterInterface');
 
-            $where = [];
-            $params = [];
+            $filterWhere  = [];
+            $filterParams = [];
             if ($search !== '') {
-                $like    = '%' . $search . '%';
-                $where[] = '(d.sdom_domain LIKE ? OR s.site_name LIKE ? OR s.site_label LIKE ?)';
-                $params  = array_merge($params, [$like, $like, $like]);
+                $like           = '%' . $search . '%';
+                $filterWhere[]  = '(d.sdom_domain LIKE ? OR s.site_name LIKE ? OR s.site_label LIKE ?)';
+                $filterParams   = array_merge($filterParams, [$like, $like, $like]);
             }
             if ($siteId) {
-                $where[] = 'd.sdom_site_id = ?';
-                $params[] = $siteId;
+                $filterWhere[]  = 'd.sdom_site_id = ?';
+                $filterParams[] = $siteId;
             }
-            $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
-            $countRow = iterator_to_array($db->query(
-                "SELECT COUNT(*) AS total
-                 FROM melis_cms_site_domain d
-                 LEFT JOIN melis_cms_site s ON s.site_id = d.sdom_site_id
-                 $whereClause",
-                $params
-            ));
-            $total = (int) ($countRow[0]['total'] ?? 0);
+            // Sort whitelist — keys align with the page's triable column ids (COL_ORDER).
+            // Every expr MUST be NON-NULL for the keyset predicate to behave.
+            $sortMap = [
+                'id'     => 'd.sdom_id',
+                'domain' => "COALESCE(d.sdom_domain,'')",
+                'site'   => "COALESCE(s.site_label, s.site_name, '')",
+                'env'    => "COALESCE(d.sdom_env,'')",
+                'robots' => "CASE WHEN r.robot_text IS NOT NULL AND TRIM(r.robot_text) <> '' THEN 1 ELSE 0 END",
+            ];
 
-            $rows = $db->query(
-                "SELECT d.sdom_id, d.sdom_site_id, d.sdom_domain, d.sdom_env, d.sdom_scheme,
-                        s.site_name, s.site_label, r.robot_text
-                 FROM melis_cms_site_domain d
-                 LEFT JOIN melis_cms_site s ON s.site_id = d.sdom_site_id
-                 LEFT JOIN melis_cms_domain_robots r ON r.robot_site_domain = d.sdom_domain
-                 $whereClause
-                 ORDER BY d.sdom_id DESC
-                 LIMIT ? OFFSET ?",
-                array_merge($params, [$limit, $offset])
-            );
+            [$rows, $total, $next] = $this->keysetList([
+                'db'           => $db,
+                'from'         => 'melis_cms_site_domain d',
+                'joins'        => 'LEFT JOIN melis_cms_site s ON s.site_id = d.sdom_site_id'
+                                . ' LEFT JOIN melis_cms_domain_robots r ON r.robot_site_domain = d.sdom_domain',
+                'selectCols'   => 'd.sdom_id, d.sdom_site_id, d.sdom_domain, d.sdom_env, d.sdom_scheme,'
+                                . ' s.site_name, s.site_label, r.robot_text',
+                'filterWhere'  => $filterWhere,
+                'filterParams' => $filterParams,
+                'sortMap'      => $sortMap,
+                'idCol'        => 'd.sdom_id',
+                'idAlias'      => 'sdom_id',
+                'sortKey'      => $sort,
+                'dir'          => $dir,
+                'after'        => $after,
+                'limit'        => $limit,
+            ]);
 
             $items = [];
             foreach ($rows as $row) {
@@ -93,7 +102,7 @@ class MelisReactApiSiteRobotController extends MelisAbstractActionController
 
             return $this->jsonResponse([
                 'success' => true,
-                'data'    => ['items' => $items, 'total' => $total, 'page' => $page, 'limit' => $limit],
+                'data'    => ['items' => $items, 'total' => $total, 'nextCursor' => $next],
             ]);
         } catch (\Throwable $e) {
             return $this->errorResponse($e);
