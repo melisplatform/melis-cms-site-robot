@@ -35,7 +35,16 @@ class ToolSiteRobotController extends MelisAbstractActionController
 
         if ($data) {
             $content = $data->robot_text;
-        }  
+        }
+
+        // Serve attacker-authored robots.txt content safely: force text/plain and
+        // prevent MIME sniffing so it is never interpreted as HTML on the site origin.
+        $response = $this->getResponse();
+        $response->getHeaders()->addHeaders([
+            'Content-Type'           => 'text/plain; charset=utf-8',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+
         $view = new ViewModel();
         $view->setTerminal(true);
         $view->content = $content;

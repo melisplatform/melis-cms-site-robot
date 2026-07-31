@@ -212,6 +212,16 @@ class MelisReactApiSiteRobotController extends MelisAbstractActionController
                 return $this->jsonResponse(['success' => false, 'error' => 'Domaine invalide.'], 400);
             }
 
+            // Cap stored robots.txt length to prevent unbounded attacker-authored content
+            // being served verbatim on the public /robots.txt route.
+            $maxLen = 65535;
+            if (strlen($robotText) > $maxLen) {
+                return $this->jsonResponse([
+                    'success' => false,
+                    'error'   => 'robots.txt trop volumineux (max ' . $maxLen . ' caractères).',
+                ], 400);
+            }
+
             $db = $this->getServiceManager()->get('Laminas\Db\Adapter\AdapterInterface');
 
             // Le domaine doit exister → on récupère son nom (clé de jointure des robots).
