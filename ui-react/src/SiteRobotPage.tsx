@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   fetchDomains, fetchRobotStats, fetchSites, fetchDomainById, saveRobot, deleteRobot,
@@ -8,6 +8,8 @@ import {
 import { useKeysetList } from './use-keyset-list'
 import { ExportModal, DownloadIcon } from './ExportModal'
 import { ViewToggle } from './ViewToggle'
+import { useIsNarrow } from './shared/useIsNarrow'
+import { ExpandToggle, HiddenColsRow } from './shared/ExpandableRow'
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Brique « Robots » (MelisCmsSiteRobot) — full React, montée à /melis-cms/site-robot
@@ -124,6 +126,9 @@ type ColDef = { id: string; visible: boolean }
 const COL_ORDER = ['id', 'domain', 'site', 'env', 'robots'] as const
 const COL_LABEL: Record<string, string> = { id: 'col_id', domain: 'col_domain', site: 'col_site', env: 'col_env', robots: 'col_robots' }
 const DEFAULT_COLS: ColDef[] = COL_ORDER.map((id) => ({ id, visible: id !== 'id' }))
+// Sur viewport étroit, la table est ramenée à CETTE seule colonne (celle qui identifie le mieux la
+// ligne) + le « + » d'expansion + les actions → tient sans scroll horizontal sur un téléphone.
+const ESSENTIAL_COLS = new Set(['domain'])
 const COL_KEY = 'melis-site-robot-cols-v1'
 function loadCols(): ColDef[] {
   try {
@@ -138,18 +143,19 @@ function loadCols(): ColDef[] {
 function saveCols(c: ColDef[]) { try { localStorage.setItem(COL_KEY, JSON.stringify(c)) } catch { /* */ } }
 const visibleCols = (c: ColDef[]) => c.filter((x) => x.visible)
 
-const panelCss: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 2, minHeight: 130, maxHeight: 'min(48vh, 320px)', overflowY: 'auto', minWidth: 0, borderRadius: 8, border: '1px dashed var(--color-border)', padding: 6 }
 const panelTitle: CSSProperties = { padding: '0 6px 4px', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--color-muted-foreground)' }
 
 function ColManager({ anchorRef, cols, labelFor, onChange, onClose }: {
   anchorRef: RefObject<HTMLElement | null>; cols: ColDef[]; labelFor: (id: string) => string; onChange: (c: ColDef[]) => void; onClose: () => void
 }) {
   const t = useT()
+  const narrow = useIsNarrow()
   const [dragId, setDragId] = useState<string | null>(null)
   const [over, setOver] = useState<{ id: string; panel: 'visible' | 'hidden' } | null>(null)
-  const [pos, setPos] = useState<{ top?: number; bottom?: number; right: number; maxHeight: number } | null>(null)
+  const [pos, setPos] = useState<{ top?: number; bottom?: number; left: number; width: number; maxHeight: number } | null>(null)
   const shown = cols.filter((c) => c.visible)
   const hidden = cols.filter((c) => !c.visible)
+  const panelCss: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 2, minHeight: narrow ? 90 : 130, maxHeight: narrow ? 'min(30vh, 200px)' : 'min(48vh, 320px)', overflowY: 'auto', minWidth: 0, borderRadius: 8, border: '1px dashed var(--color-border)', padding: 6 }
 
   useLayoutEffect(() => {
     const anchor = anchorRef.current
@@ -158,11 +164,17 @@ function ColManager({ anchorRef, cols, labelFor, onChange, onClose }: {
     const margin = 8
     const spaceBelow = window.innerHeight - rect.bottom - margin
     const spaceAbove = rect.top - margin
-    const right = Math.max(margin, window.innerWidth - rect.right)
+    // Panneau aligné à droite sur l'ancre par défaut, mais avec un `left` CALCULÉ ET BORNÉ pour
+    // qu'il ne puisse jamais déborder du bord gauche du viewport : le bord droit de l'ancre n'est
+    // pas forcément au ras du vrai bord d'écran (padding de page, bouton devenu demi-ligne d'un
+    // flex-wrap sur étroit), donc un ancrage purement par `right` laissait le bord GAUCHE passer
+    // en négatif et rognait l'en-tête « Colonnes ». No-op sur desktop (place suffisante).
+    const width = Math.min(380, window.innerWidth - margin * 2)
+    const left = Math.min(Math.max(margin, rect.right - width), window.innerWidth - width - margin)
     if (spaceBelow >= 200 || spaceBelow >= spaceAbove) {
-      setPos({ top: rect.bottom + 6, right, maxHeight: Math.max(160, spaceBelow - 6) })
+      setPos({ top: rect.bottom + 6, left, width, maxHeight: Math.max(160, spaceBelow - 6) })
     } else {
-      setPos({ bottom: window.innerHeight - rect.top + 6, right, maxHeight: Math.max(160, spaceAbove - 6) })
+      setPos({ bottom: window.innerHeight - rect.top + 6, left, width, maxHeight: Math.max(160, spaceAbove - 6) })
     }
   }, [anchorRef])
 
@@ -198,7 +210,7 @@ function ColManager({ anchorRef, cols, labelFor, onChange, onClose }: {
   if (!pos) return null
   return (
     <div style={{
-      ...card, position: 'fixed', right: pos.right, zIndex: 50, width: 380, maxWidth: 'calc(100vw - 1rem)',
+      ...card, position: 'fixed', left: pos.left, zIndex: 50, width: pos.width,
       maxHeight: pos.maxHeight, overflowY: 'auto', display: 'flex', flexDirection: 'column',
       ...(pos.top != null ? { top: pos.top } : { bottom: pos.bottom }),
     }}>
@@ -206,7 +218,9 @@ function ColManager({ anchorRef, cols, labelFor, onChange, onClose }: {
         <span style={{ fontSize: 14, fontWeight: 600 }}>{t('columns')}</span>
         <button style={{ ...iconBtn, width: 22, height: 22 }} onClick={onClose}>✕</button>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: 12 }}>
+      {/* Masquées / Visibles côte à côte sur desktop ; empilés sur étroit (à 2 colonnes dans un
+          panneau étroit, les libellés sont tronqués et le drag&drop devient aveugle). */}
+      <div style={{ display: 'grid', gridTemplateColumns: narrow ? 'minmax(0, 1fr)' : '1fr 1fr', gap: 8, padding: 12 }}>
         <div style={panelCss}
           onDragOver={(e) => { e.preventDefault(); if (over?.id !== '__panel__' || over?.panel !== 'hidden') setOver({ id: '__panel__', panel: 'hidden' }) }}
           onDrop={(e) => { e.preventDefault(); drop('hidden') }}>
@@ -228,11 +242,13 @@ function ColManager({ anchorRef, cols, labelFor, onChange, onClose }: {
   )
 }
 
-function Kpi({ label: lbl, value }: { label: string; value: number | null }) {
+function Kpi({ label: lbl, value, narrow }: { label: string; value: number | null; narrow?: boolean }) {
+  // `minWidth` réduit sur étroit pour que les 3 KPI tiennent sur une ligne au lieu de s'empiler
+  // en 3 grosses cartes pleine largeur qui repoussent la liste hors de l'écran.
   return (
-    <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 2, padding: 16, flex: 1, minWidth: 140 }}>
+    <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 2, padding: narrow ? 12 : 16, flex: 1, minWidth: narrow ? 92 : 140 }}>
       <span style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>{lbl}</span>
-      <span style={{ fontSize: 22, fontWeight: 700 }}>{value == null ? '…' : value}</span>
+      <span style={{ fontSize: narrow ? 18 : 22, fontWeight: 700 }}>{value == null ? '…' : value}</span>
     </div>
   )
 }
@@ -266,6 +282,7 @@ export default function SiteRobotPage({ active = true }: { active?: boolean }) {
 // ── Liste des domaines ────────────────────────────────────────────────────────
 function DomainList({ base }: { base: string }) {
   const t = useT()
+  const narrow = useIsNarrow()
   const navigate = useNavigate()
   const [stats, setStats] = useState<RobotStats | null>(null)
   const [sites, setSites] = useState<SiteOption[]>([])
@@ -280,6 +297,18 @@ function DomainList({ base }: { base: string }) {
   const [showExport, setShowExport] = useState(false)
   const [mode, setMode] = useState<'react' | 'iframe'>('react')
   const [frameLoaded, setFrameLoaded] = useState(false)
+
+  // Mobile uniquement : la table est ramenée à la seule colonne « domaine », quelle que soit la
+  // préférence desktop (ColManager), le reste étant atteignable via un « + » par ligne. Le
+  // comportement desktop est intact : `displayCols`/`hasHidden` ne divergent de `cols` que si
+  // `narrow`. En particulier `hasHidden` ne dépend PAS de « l'utilisateur a masqué une colonne »,
+  // sinon un desktop avec une colonne masquée se verrait pousser une colonne « + » inédite.
+  const [expanded, setExpanded] = useState<Set<number>>(new Set())
+  const toggleExpand = (rid: number) => setExpanded((s) => {
+    const n = new Set(s); n.has(rid) ? n.delete(rid) : n.add(rid); return n
+  })
+  const displayCols = narrow ? cols.map((c) => ({ ...c, visible: ESSENTIAL_COLS.has(c.id) })) : cols
+  const hasHidden = narrow
 
   // Liste = scroll infini + tri server-side (keyset). `tick` (deps) relance un chargement
   // frais (reset filtres / retour du formulaire / delete) et sert aussi de trigger aux stats.
@@ -314,15 +343,18 @@ function DomainList({ base }: { base: string }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: 24, height: '100%', boxSizing: 'border-box', overflow: 'auto' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: narrow ? 16 : 24, height: '100%', boxSizing: 'border-box', overflow: 'auto' }}>
+      {/* En-tête : titre à gauche / contrôles à droite, TOUJOURS sur une seule ligne (un
+          flex-wrap ici produirait 2 barres pleine largeur empilées, pire que le desktop).
+          Les ajouts « narrow » ne remplacent jamais un style desktop. */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-        <div>
-          <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{t('title')}</h1>
-          <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)', margin: '2px 0 0' }}>{t('subtitle')}</p>
+        <div style={narrow ? { minWidth: 0 } : undefined}>
+          <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0, ...(narrow ? { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } : {}) }}>{t('title')}</h1>
+          <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)', margin: '2px 0 0', ...(narrow ? { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } : {}) }}>{t('subtitle')}</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ViewToggle mode={mode} onChange={(m) => { setMode(m); if (m === 'iframe') setFrameLoaded(true) }} />
-          <button style={btnGhost} onClick={() => setTick((x) => x + 1)} title={t('refresh')}>↻</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, ...(narrow ? { flexShrink: 0 } : {}) }}>
+          <ViewToggle mode={mode} compact={narrow} onChange={(m) => { setMode(m); if (m === 'iframe') setFrameLoaded(true) }} />
+          <button style={{ ...btnGhost, ...(narrow ? { padding: '0 10px' } : {}) }} onClick={() => setTick((x) => x + 1)} title={t('refresh')}>↻</button>
         </div>
       </div>
 
@@ -340,53 +372,61 @@ function DomainList({ base }: { base: string }) {
       {!can('list') ? (
         <div style={{ ...card, padding: '40px 16px', textAlign: 'center', fontSize: 14, color: 'var(--color-muted-foreground)' }}>{t('no_access')}</div>
       ) : (<>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <Kpi label={t('kpi_total')} value={stats?.total ?? null} />
-          <Kpi label={t('kpi_with')} value={stats?.withRobots ?? null} />
-          <Kpi label={t('kpi_without')} value={stats?.withoutRobots ?? null} />
+        <div style={{ display: 'flex', gap: narrow ? 8 : 12, flexWrap: 'wrap' }}>
+          <Kpi label={t('kpi_total')} value={stats?.total ?? null} narrow={narrow} />
+          <Kpi label={t('kpi_with')} value={stats?.withRobots ?? null} narrow={narrow} />
+          <Kpi label={t('kpi_without')} value={stats?.withoutRobots ?? null} narrow={narrow} />
         </div>
 
+        {/* Barre de filtres : sur étroit, recherche et select passent pleine largeur ;
+            « Réinitialiser les filtres » (libellé long en FR) prend sa propre ligne pleine
+            largeur, et Colonnes / Exporter (libellés courts) se partagent une ligne à 50/50. */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <input style={{ ...inputCss, height: 36, flex: 1, minWidth: 220 }} value={searchInput}
+          <input style={{ ...inputCss, height: 36, flex: narrow ? '1 1 100%' : 1, minWidth: narrow ? 0 : 220 }} value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && setSearch(searchInput.trim())}
             placeholder={t('search')} />
-          <select style={{ ...inputCss, height: 36, width: 'auto' }} value={site ?? ''} onChange={(e) => setSite(e.target.value ? Number(e.target.value) : null)}>
+          <select style={{ ...inputCss, height: 36, width: narrow ? '100%' : 'auto' }} value={site ?? ''} onChange={(e) => setSite(e.target.value ? Number(e.target.value) : null)}>
             <option value="">{t('all_sites')}</option>
             {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
-          <button style={{ ...btnGhost, height: 36 }} onClick={resetFilters}><ResetIcon />{t('reset_filters')}</button>
-          <div ref={colsAnchorRef} style={{ position: 'relative' }}>
-            <button style={{ ...btnGhost, height: 36 }} onClick={() => setShowCols((v) => !v)}><GripIcon />{t('columns')}</button>
+          <button style={{ ...btnGhost, height: 36, ...(narrow ? { flex: '1 1 100%', justifyContent: 'center' } : {}) }} onClick={resetFilters}><ResetIcon />{t('reset_filters')}</button>
+          <div ref={colsAnchorRef} style={{ position: 'relative', ...(narrow ? { flex: '1 1 calc(50% - 4px)' } : {}) }}>
+            <button style={{ ...btnGhost, height: 36, ...(narrow ? { width: '100%', justifyContent: 'center' } : {}) }} onClick={() => setShowCols((v) => !v)}><GripIcon />{t('columns')}</button>
             {showCols && <ColManager anchorRef={colsAnchorRef} cols={cols} labelFor={(id) => t(COL_LABEL[id])} onChange={setCols} onClose={() => setShowCols(false)} />}
           </div>
-          {can('export') && <button style={{ ...btnGhost, height: 36 }} onClick={() => setShowExport(true)}><DownloadIcon />{t('export')}</button>}
+          {can('export') && <button style={{ ...btnGhost, height: 36, ...(narrow ? { flex: '1 1 calc(50% - 4px)', justifyContent: 'center' } : {}) }} onClick={() => setShowExport(true)}><DownloadIcon />{t('export')}</button>}
         </div>
 
         <div style={{ ...card, overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', ...(narrow ? {} : { minWidth: 640 }) }}>
             <thead style={{ background: 'var(--color-muted,rgba(0,0,0,.03))' }}>
               <tr>
-                {visibleCols(cols).map(({ id }) => (
-                  <th key={id} style={{ ...th, cursor: 'pointer', ...(id === 'id' ? { width: 70 } : {}), ...(id === 'robots' ? { width: 120 } : {}), ...(sortCol === id ? { color: 'var(--color-primary)' } : {}) }}
+                {hasHidden && <th style={{ ...th, width: 32, padding: '10px 8px' }} />}
+                {visibleCols(displayCols).map(({ id }) => (
+                  <th key={id} style={{ ...th, cursor: 'pointer', ...(id === 'id' ? { width: 70 } : {}), ...(id === 'robots' ? { width: 120 } : {}), ...(narrow ? { padding: '10px 8px' } : {}), ...(sortCol === id ? { color: 'var(--color-primary)' } : {}) }}
                     onClick={() => toggleSort(id)}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>{t(COL_LABEL[id])}<SortIcon dir={sortCol === id ? sortDir : null} /></span>
                   </th>
                 ))}
-                <th style={{ ...th, width: 80 }} />
+                <th style={{ ...th, ...(narrow ? { padding: '10px 8px' } : { width: 80 }) }} />
               </tr>
             </thead>
             <tbody>
               {items.length === 0 && !loading ? (
-                <tr><td style={{ ...td, textAlign: 'center', color: 'var(--color-muted-foreground)', padding: '40px 16px' }} colSpan={visibleCols(cols).length + 1}>{t('empty')}</td></tr>
+                <tr><td style={{ ...td, textAlign: 'center', color: 'var(--color-muted-foreground)', padding: '40px 16px' }} colSpan={visibleCols(displayCols).length + (hasHidden ? 1 : 0) + 1}>{t('empty')}</td></tr>
               ) : items.map((r) => (
-                <tr key={r.id}>
-                  {visibleCols(cols).map(({ id }) => (
-                    <td key={id} style={{ ...td, ...(id === 'id' ? { color: 'var(--color-muted-foreground)', fontVariantNumeric: 'tabular-nums' } : {}), ...(id === 'domain' ? { fontFamily: 'monospace', fontSize: 13 } : {}) }}>
+                <Fragment key={r.id}>
+                <tr>
+                  {/* « + » d'expansion en colonne LA PLUS À GAUCHE (pas replié dans la cellule
+                      d'actions à droite, où il passe inaperçu) — n'existe que sur étroit. */}
+                  {hasHidden && <td style={{ ...td, padding: '10px 8px' }}><ExpandToggle expanded={expanded.has(r.id)} onClick={() => toggleExpand(r.id)} /></td>}
+                  {visibleCols(displayCols).map(({ id }) => (
+                    <td key={id} style={{ ...td, ...(id === 'id' ? { color: 'var(--color-muted-foreground)', fontVariantNumeric: 'tabular-nums' } : {}), ...(id === 'domain' ? { fontFamily: 'monospace', fontSize: 13 } : {}), ...(narrow ? { padding: '10px 8px', overflowWrap: 'anywhere' } : {}) }}>
                       {id === 'id' && r.id}
                       {id === 'domain' && (
                         <button onClick={() => navigate(`${base}/${r.id}`)}
-                          style={{ background: 'transparent', border: 0, padding: 0, color: 'var(--color-foreground)', fontFamily: 'monospace', fontSize: 13, fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
+                          style={{ background: 'transparent', border: 0, padding: 0, color: 'var(--color-foreground)', fontFamily: 'monospace', fontSize: 13, fontWeight: 600, cursor: 'pointer', textAlign: 'left', ...(narrow ? { whiteSpace: 'normal', overflowWrap: 'anywhere' } : {}) }}>
                           {r.scheme ? `${r.scheme}://${r.domain}` : r.domain}
                         </button>
                       )}
@@ -395,13 +435,26 @@ function DomainList({ base }: { base: string }) {
                       {id === 'robots' && <RobotsBadge has={r.hasRobots} labelOn={t('robots_yes')} labelOff={t('robots_no')} />}
                     </td>
                   ))}
-                  <td style={td}>
+                  <td style={{ ...td, ...(narrow ? { padding: '10px 8px' } : {}) }}>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
                       {can('edit') && <button style={iconBtn} title={t('edit')} onClick={() => navigate(`${base}/${r.id}`)}><PencilIcon /></button>}
                       {can('delete') && r.hasRobots && <button style={{ ...iconBtn, color: 'var(--color-destructive,#ef4444)' }} title={t('del')} onClick={() => setToDelete(r)}><TrashIcon /></button>}
                     </div>
                   </td>
                 </tr>
+                {hasHidden && expanded.has(r.id) && (
+                  <HiddenColsRow cols={displayCols} labelFor={(id) => t(COL_LABEL[id])}
+                    renderValue={(id) => (
+                      id === 'id' ? r.id
+                        : id === 'domain' ? (r.scheme ? `${r.scheme}://${r.domain}` : r.domain)
+                          : id === 'site' ? r.siteName
+                            : id === 'env' ? r.env
+                              : id === 'robots' ? <RobotsBadge has={r.hasRobots} labelOn={t('robots_yes')} labelOff={t('robots_no')} />
+                                : ''
+                    )}
+                    colSpan={visibleCols(displayCols).length + 2} narrow={narrow} />
+                )}
+                </Fragment>
               ))}
             </tbody>
           </table>
@@ -414,8 +467,8 @@ function DomainList({ base }: { base: string }) {
       </div>
 
       {toDelete && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.5)' }}>
-          <div style={{ ...card, padding: 24, width: '100%', maxWidth: 380 }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.5)', ...(narrow ? { padding: 16 } : {}) }}>
+          <div style={{ ...card, padding: narrow ? 20 : 24, width: '100%', maxWidth: 380 }}>
             <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>{t('del_title')}</h3>
             <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)', marginTop: 8 }}>{t('del_confirm', { n: toDelete.domain })}</p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
@@ -452,6 +505,7 @@ function DomainList({ base }: { base: string }) {
 // ── Formulaire : édition du robots.txt d'un domaine ────────────────────────────
 function RobotForm({ id, base }: { id: string; base: string }) {
   const t = useT()
+  const narrow = useIsNarrow()
   const navigate = useNavigate()
   const domainId = parseInt(id)
 
@@ -495,12 +549,12 @@ function RobotForm({ id, base }: { id: string; base: string }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: 24, height: '100%', boxSizing: 'border-box', overflow: 'auto' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: narrow ? 16 : 24, height: '100%', boxSizing: 'border-box', overflow: 'auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-        <div>
-          <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{t('edit_title', { n: domain || ('#' + id) })}</h1>
+        <div style={narrow ? { minWidth: 0 } : undefined}>
+          <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0, ...(narrow ? { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } : {}) }}>{t('edit_title', { n: domain || ('#' + id) })}</h1>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, ...(narrow ? { flexShrink: 0 } : {}) }}>
           {saved && <span style={{ fontSize: 14, color: '#059669' }}>{t('saved')}</span>}
           <button style={btnPrimary} onClick={submit} disabled={saving || loading}>{saving ? '…' : t('save')}</button>
         </div>
@@ -511,13 +565,13 @@ function RobotForm({ id, base }: { id: string; base: string }) {
       {loading ? (
         <div style={{ padding: 48, textAlign: 'center', color: 'var(--color-muted-foreground)' }}>{t('loading')}</div>
       ) : (
-        <div style={{ ...card, padding: 20, maxWidth: 820, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ ...card, padding: narrow ? 16 : 20, maxWidth: 820, display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ flex: narrow ? '1 1 100%' : 1, minWidth: narrow ? 0 : 220 }}>
               <label style={label}>{t('f_domain')}</label>
               <input style={{ ...inputCss, fontFamily: 'monospace', opacity: 0.75 }} value={domain} readOnly />
             </div>
-            <div style={{ flex: 1, minWidth: 180 }}>
+            <div style={{ flex: narrow ? '1 1 100%' : 1, minWidth: narrow ? 0 : 180 }}>
               <label style={label}>{t('f_site')}</label>
               <input style={{ ...inputCss, opacity: 0.75 }} value={siteName} readOnly />
             </div>
@@ -526,7 +580,7 @@ function RobotForm({ id, base }: { id: string; base: string }) {
             <label style={label}>{t('f_robot')}</label>
             <textarea value={robotText} onChange={(e) => setRobotText(e.target.value)} placeholder={t('f_robot_ph')}
               spellCheck={false}
-              style={{ ...inputCss, height: 320, padding: 12, resize: 'vertical', fontFamily: 'monospace', fontSize: 13, lineHeight: 1.5, whiteSpace: 'pre' }} />
+              style={{ ...inputCss, height: narrow ? 240 : 320, padding: 12, resize: 'vertical', fontFamily: 'monospace', fontSize: 13, lineHeight: 1.5, whiteSpace: 'pre' }} />
             <p style={hint}>{t('f_robot_hint')}</p>
           </div>
         </div>

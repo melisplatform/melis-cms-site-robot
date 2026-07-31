@@ -1,4 +1,5 @@
 import { useState, type CSSProperties } from 'react'
+import { useIsNarrow } from './shared/useIsNarrow'
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Modale d'export partagée par les briques MelisCms (Redirections, Templates…).
@@ -43,7 +44,6 @@ function tr(key: string, vars?: Record<string, string | number>): string {
 }
 
 const card: CSSProperties = { border: '1px solid var(--color-border)', background: 'var(--color-card)', borderRadius: 12, boxShadow: '0 1px 2px rgba(0,0,0,.04)' }
-const panelCss: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 2, minHeight: 100, maxHeight: 'min(48vh, 320px)', overflowY: 'auto', minWidth: 0, borderRadius: 8, border: '1px dashed var(--color-border)', padding: 6 }
 const panelTitle: CSSProperties = { padding: '0 6px 4px', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--color-muted-foreground)' }
 const btnGhost: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 12px', borderRadius: 8, border: '1px solid var(--color-border)', background: 'var(--color-card)', color: 'var(--color-foreground)', fontSize: 14, cursor: 'pointer' }
 const btnPrimary: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 8, border: 0, background: 'var(--color-primary)', color: 'var(--color-primary-foreground,#fff)', fontSize: 14, fontWeight: 500, cursor: 'pointer' }
@@ -64,7 +64,12 @@ export function ExportModal<T>({ cols, labelFor, fetchAll, getCell, filename, sh
   total: number
   onClose: () => void
 }) {
+  const narrow = useIsNarrow()
   const xlsx = getXLSX()
+  // Panneaux Exclues/Incluses empilés sur étroit (à 2 colonnes dans une modale de ~340 px les
+  // libellés sont tronqués et le drag&drop devient aveugle) ; hauteurs réduites pour que les
+  // boutons Annuler/Télécharger restent visibles sans scroller la modale.
+  const panelCss: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 2, minHeight: narrow ? 80 : 100, maxHeight: narrow ? 'min(28vh, 200px)' : 'min(48vh, 320px)', overflowY: 'auto', minWidth: 0, borderRadius: 8, border: '1px dashed var(--color-border)', padding: 6 }
   const [included, setIncluded] = useState<ExportCol[]>(() => cols.filter(c => c.visible))
   const [excluded, setExcluded] = useState<ExportCol[]>(() => cols.filter(c => !c.visible))
   const [format, setFormat] = useState<'csv' | 'xlsx'>(xlsx ? 'xlsx' : 'csv')
@@ -131,7 +136,7 @@ export function ExportModal<T>({ cols, labelFor, fetchAll, getCell, filename, sh
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.5)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div style={{ ...card, width: '100%', maxWidth: 480 }}>
+      <div style={{ ...card, width: '100%', maxWidth: 480, ...(narrow ? { margin: 16, maxHeight: 'calc(100vh - 32px)', overflowY: 'auto' } : {}) }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--color-border)' }}>
           <div>
             <h2 style={{ fontSize: 14, fontWeight: 600, margin: 0 }}>{tr('title')}</h2>
@@ -144,7 +149,7 @@ export function ExportModal<T>({ cols, labelFor, fetchAll, getCell, filename, sh
             <button style={tab(format === 'xlsx')} disabled={!xlsx} onClick={() => xlsx && setFormat('xlsx')} title={xlsx ? '' : 'XLSX indisponible'}><ExcelIcon />Excel (.xlsx)</button>
             <button style={tab(format === 'csv')} onClick={() => setFormat('csv')}><CsvIcon />CSV (.csv)</button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: narrow ? 'minmax(0, 1fr)' : '1fr 1fr', gap: 8 }}>
             <div style={panelCss}
               onDragOver={(e) => { e.preventDefault(); if (over?.id !== '__panel__' || over?.panel !== 'excluded') setOver({ id: '__panel__', panel: 'excluded' }) }}
               onDrop={(e) => { e.preventDefault(); drop('excluded') }}>
