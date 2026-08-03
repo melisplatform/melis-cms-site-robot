@@ -55,6 +55,7 @@ function currentLang(): Lang {
 const DICT: Record<Lang, Record<string, string>> = {
   fr: {
     title: 'Robots.txt', subtitle: 'Fichier robots.txt par domaine de site',
+    view_new: 'Nouveau', view_old: 'Ancien',
     search: 'Rechercher un domaine…', empty: 'Aucun domaine trouvé', count: '{n} domaines — fin de la liste',
     kpi_total: 'Domaines', kpi_with: 'Avec robots.txt', kpi_without: 'Sans robots.txt',
     all_sites: 'Tous les sites',
@@ -74,6 +75,7 @@ const DICT: Record<Lang, Record<string, string>> = {
   },
   en: {
     title: 'Robots.txt', subtitle: 'Per-domain robots.txt file',
+    view_new: 'New', view_old: 'Old',
     search: 'Search a domain…', empty: 'No domain found', count: '{n} domains — end of list',
     kpi_total: 'Domains', kpi_with: 'With robots.txt', kpi_without: 'Without robots.txt',
     all_sites: 'All sites',
@@ -120,6 +122,18 @@ const PencilIcon = () => <svg style={sIcon} viewBox="0 0 24 24" fill="none" stro
 const TrashIcon = () => <svg style={sIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /></svg>
 const GripIcon = () => <svg style={{ width: 13, height: 13, flexShrink: 0, color: 'var(--color-muted-foreground)' }} viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5" /><circle cx="15" cy="6" r="1.5" /><circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" /><circle cx="9" cy="18" r="1.5" /><circle cx="15" cy="18" r="1.5" /></svg>
 const ResetIcon = () => <svg style={sIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v6h6" /><path d="M3 13a9 9 0 1 0 3-7.7L3 8" /></svg>
+
+// ── Icônes des cartes KPI (tracés lucide Globe/FileCheck2/FileX2) ──
+const kIcon = { width: 18, height: 18, flexShrink: 0 } as const
+const GlobeIcon = () => <svg style={kIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20Z" /><path d="M2 12h20" /></svg>
+const FileCheckIcon = () => <svg style={kIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2Z" /><path d="M14 2v6h6" /><path d="m9 15 2 2 4-4" /></svg>
+const FileXIcon = () => <svg style={kIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2Z" /><path d="M14 2v6h6" /><path d="m9.5 12.5 5 5" /><path d="m14.5 12.5-5 5" /></svg>
+
+// Mêmes teintes que RobotsBadge (14%/vert-succès, muted/gris) + primary pour le total —
+// cohérent avec les cartes KPI existantes (Users, etc.).
+const kpiColorPrimary: CSSProperties = { background: 'color-mix(in srgb, var(--color-primary) 12%, transparent)', color: 'var(--color-primary)' }
+const kpiColorGood: CSSProperties = { background: 'color-mix(in srgb, #10b981 14%, transparent)', color: '#059669' }
+const kpiColorMuted: CSSProperties = { background: 'var(--color-muted,rgba(0,0,0,.06))', color: 'var(--color-muted-foreground)' }
 
 // ── Colonnes (masquer + réordonner, persisté) ──
 type ColDef = { id: string; visible: boolean }
@@ -242,13 +256,21 @@ function ColManager({ anchorRef, cols, labelFor, onChange, onClose }: {
   )
 }
 
-function Kpi({ label: lbl, value, narrow }: { label: string; value: number | null; narrow?: boolean }) {
+function Kpi({ label: lbl, value, narrow, icon: Icon, color }: {
+  label: string; value: number | null; narrow?: boolean; icon: () => JSX.Element; color: CSSProperties
+}) {
   // `minWidth` réduit sur étroit pour que les 3 KPI tiennent sur une ligne au lieu de s'empiler
-  // en 3 grosses cartes pleine largeur qui repoussent la liste hors de l'écran.
+  // en 3 grosses cartes pleine largeur qui repoussent la liste hors de l'écran. Icône dans un
+  // badge coloré à gauche, même layout que les cartes KPI de UserListPage (icon box + label/valeur).
   return (
-    <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 2, padding: narrow ? 12 : 16, flex: 1, minWidth: narrow ? 92 : 140 }}>
-      <span style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>{lbl}</span>
-      <span style={{ fontSize: narrow ? 18 : 22, fontWeight: 700 }}>{value == null ? '…' : value}</span>
+    <div style={{ ...card, display: 'flex', alignItems: 'center', gap: narrow ? 8 : 12, padding: narrow ? 12 : 16, flex: 1, minWidth: narrow ? 92 : 140 }}>
+      <div style={{ display: 'grid', placeItems: 'center', width: narrow ? 30 : 40, height: narrow ? 30 : 40, borderRadius: 8, flexShrink: 0, ...color }}>
+        <Icon />
+      </div>
+      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <span style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>{lbl}</span>
+        <span style={{ fontSize: narrow ? 18 : 22, fontWeight: 700 }}>{value == null ? '…' : value}</span>
+      </div>
     </div>
   )
 }
@@ -353,7 +375,7 @@ function DomainList({ base }: { base: string }) {
           <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)', margin: '2px 0 0', ...(narrow ? { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } : {}) }}>{t('subtitle')}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, ...(narrow ? { flexShrink: 0 } : {}) }}>
-          <ViewToggle mode={mode} compact={narrow} onChange={(m) => { setMode(m); if (m === 'iframe') setFrameLoaded(true) }} />
+          <ViewToggle mode={mode} compact={narrow} labels={{ react: t('view_new'), iframe: t('view_old') }} onChange={(m) => { setMode(m); if (m === 'iframe') setFrameLoaded(true) }} />
           <button style={{ ...btnGhost, ...(narrow ? { padding: '0 10px' } : {}) }} onClick={() => setTick((x) => x + 1)} title={t('refresh')}>↻</button>
         </div>
       </div>
@@ -372,17 +394,20 @@ function DomainList({ base }: { base: string }) {
       {!can('list') ? (
         <div style={{ ...card, padding: '40px 16px', textAlign: 'center', fontSize: 14, color: 'var(--color-muted-foreground)' }}>{t('no_access')}</div>
       ) : (<>
-        <div style={{ display: 'flex', gap: narrow ? 8 : 12, flexWrap: 'wrap' }}>
-          <Kpi label={t('kpi_total')} value={stats?.total ?? null} narrow={narrow} />
-          <Kpi label={t('kpi_with')} value={stats?.withRobots ?? null} narrow={narrow} />
-          <Kpi label={t('kpi_without')} value={stats?.withoutRobots ?? null} narrow={narrow} />
+        <div style={narrow ? { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 } : { display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <Kpi label={t('kpi_total')} value={stats?.total ?? null} narrow={narrow} icon={GlobeIcon} color={kpiColorPrimary} />
+          <Kpi label={t('kpi_with')} value={stats?.withRobots ?? null} narrow={narrow} icon={FileCheckIcon} color={kpiColorGood} />
+          <Kpi label={t('kpi_without')} value={stats?.withoutRobots ?? null} narrow={narrow} icon={FileXIcon} color={kpiColorMuted} />
         </div>
 
         {/* Barre de filtres : sur étroit, recherche et select passent pleine largeur ;
             « Réinitialiser les filtres » (libellé long en FR) prend sa propre ligne pleine
-            largeur, et Colonnes / Exporter (libellés courts) se partagent une ligne à 50/50. */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <input style={{ ...inputCss, height: 36, flex: narrow ? '1 1 100%' : 1, minWidth: narrow ? 0 : 220 }} value={searchInput}
+            largeur, et Colonnes / Exporter (libellés courts) se partagent une ligne à 50/50.
+            Sur desktop, la recherche est plafonnée (pas de flex:1) et le groupe d'actions est
+            poussé à droite (marginLeft:auto) pour une vraie séparation visuelle avec les filtres,
+            au lieu d'un simple gap uniforme (même idiome que UserListPage). */}
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+          <input style={{ ...inputCss, height: 36, flex: narrow ? '1 1 100%' : '0 1 320px', minWidth: narrow ? 0 : 220 }} value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && setSearch(searchInput.trim())}
             placeholder={t('search')} />
@@ -390,12 +415,18 @@ function DomainList({ base }: { base: string }) {
             <option value="">{t('all_sites')}</option>
             {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
-          <button style={{ ...btnGhost, height: 36, ...(narrow ? { flex: '1 1 100%', justifyContent: 'center' } : {}) }} onClick={resetFilters}><ResetIcon />{t('reset_filters')}</button>
-          <div ref={colsAnchorRef} style={{ position: 'relative', ...(narrow ? { flex: '1 1 calc(50% - 4px)' } : {}) }}>
-            <button style={{ ...btnGhost, height: 36, ...(narrow ? { width: '100%', justifyContent: 'center' } : {}) }} onClick={() => setShowCols((v) => !v)}><GripIcon />{t('columns')}</button>
-            {showCols && <ColManager anchorRef={colsAnchorRef} cols={cols} labelFor={(id) => t(COL_LABEL[id])} onChange={setCols} onClose={() => setShowCols(false)} />}
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', ...(narrow ? { width: '100%' } : { marginLeft: 'auto' }) }}>
+            <button style={{ ...btnGhost, height: 36, ...(narrow ? { flex: '1 1 100%', justifyContent: 'center' } : {}) }} onClick={resetFilters}><ResetIcon />{t('reset_filters')}</button>
+            {/* Colonnes / Exporter à 50/50 : le calc() doit soustraire la MOITIÉ du gap (12px de
+                ce conteneur → -6px chacun), pas -4px (valeur héritée d'un ancien gap:8px) — sinon
+                les deux éléments réclament ensemble 4px de plus que la ligne ne peut fournir et
+                le flex-wrap les repousse chacun sur sa propre ligne, quelle que soit la paire choisie. */}
+            <div ref={colsAnchorRef} style={{ position: 'relative', ...(narrow ? { flex: '1 1 calc(50% - 6px)', minWidth: 0 } : {}) }}>
+              <button style={{ ...btnGhost, height: 36, ...(narrow ? { width: '100%', justifyContent: 'center' } : {}) }} onClick={() => setShowCols((v) => !v)}><GripIcon />{t('columns')}</button>
+              {showCols && <ColManager anchorRef={colsAnchorRef} cols={cols} labelFor={(id) => t(COL_LABEL[id])} onChange={setCols} onClose={() => setShowCols(false)} />}
+            </div>
+            {can('export') && <button style={{ ...btnGhost, height: 36, ...(narrow ? { flex: '1 1 calc(50% - 6px)', minWidth: 0, justifyContent: 'center' } : {}) }} onClick={() => setShowExport(true)}><DownloadIcon />{t('export')}</button>}
           </div>
-          {can('export') && <button style={{ ...btnGhost, height: 36, ...(narrow ? { flex: '1 1 calc(50% - 4px)', justifyContent: 'center' } : {}) }} onClick={() => setShowExport(true)}><DownloadIcon />{t('export')}</button>}
         </div>
 
         <div style={{ ...card, overflow: 'hidden' }}>

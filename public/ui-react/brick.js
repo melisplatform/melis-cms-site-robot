@@ -673,15 +673,20 @@
 		height: 15,
 		flexShrink: 0
 	};
-	var SparkIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
+	var MelisM = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		style: sIcon$2,
-		viewBox: "0 0 24 24",
-		fill: "none",
-		stroke: "currentColor",
-		strokeWidth: "2",
-		strokeLinecap: "round",
-		strokeLinejoin: "round",
-		children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" })
+		viewBox: "0 0 70 70",
+		fill: "currentColor",
+		"aria-hidden": "true",
+		children: [
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M57.4,0c-4.8,0-8.6,3.9-8.6,8.6v49.2c0,4.8,3.9,8.6,8.6,8.6s8.6-3.9,8.6-8.6V8.7C66,3.9,62.2,0,57.4,0Z" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M16.3,4.6C14,.4,8.8-1.2,4.6,1,.4,3.2-1.2,8.5,1,12.7l26.1,49.3c2.2,4.2,7.4,5.8,11.7,3.6,4.2-2.2,5.8-7.4,3.6-11.7L16.3,4.6Z" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
+				cx: "8.8",
+				cy: "57.7",
+				r: "8.8"
+			})
+		]
 	});
 	var LayoutIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		style: sIcon$2,
@@ -699,7 +704,10 @@
 			rx: "2"
 		}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M3 9h18M9 21V9" })]
 	});
-	function ViewToggle({ mode, onChange, compact = false }) {
+	function ViewToggle({ mode, onChange, compact = false, labels = {
+		react: "New",
+		iframe: "Old"
+	} }) {
 		const tab = (active) => ({
 			display: "inline-flex",
 			alignItems: "center",
@@ -727,13 +735,13 @@
 			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
 				style: tab(mode === "react"),
 				onClick: () => onChange("react"),
-				title: compact ? "New" : void 0,
-				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(SparkIcon, {}), !compact && "New"]
+				title: compact ? labels.react : void 0,
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(MelisM, {}), !compact && labels.react]
 			}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
 				style: tab(mode === "iframe"),
 				onClick: () => onChange("iframe"),
-				title: compact ? "Old" : void 0,
-				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(LayoutIcon, {}), !compact && "Old"]
+				title: compact ? labels.iframe : void 0,
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(LayoutIcon, {}), !compact && labels.iframe]
 			})]
 		});
 	}
@@ -891,6 +899,8 @@
 		fr: {
 			title: "Robots.txt",
 			subtitle: "Fichier robots.txt par domaine de site",
+			view_new: "Nouveau",
+			view_old: "Ancien",
 			search: "Rechercher un domaine…",
 			empty: "Aucun domaine trouvé",
 			count: "{n} domaines — fin de la liste",
@@ -935,6 +945,8 @@
 		en: {
 			title: "Robots.txt",
 			subtitle: "Per-domain robots.txt file",
+			view_new: "New",
+			view_old: "Old",
 			search: "Search a domain…",
 			empty: "No domain found",
 			count: "{n} domains — end of list",
@@ -1155,6 +1167,70 @@
 		strokeLinejoin: "round",
 		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M3 2v6h6" }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M3 13a9 9 0 1 0 3-7.7L3 8" })]
 	});
+	var kIcon = {
+		width: 18,
+		height: 18,
+		flexShrink: 0
+	};
+	var GlobeIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
+		style: kIcon,
+		viewBox: "0 0 24 24",
+		fill: "none",
+		stroke: "currentColor",
+		strokeWidth: "2",
+		strokeLinecap: "round",
+		strokeLinejoin: "round",
+		children: [
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
+				cx: "12",
+				cy: "12",
+				r: "10"
+			}),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20Z" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M2 12h20" })
+		]
+	});
+	var FileCheckIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
+		style: kIcon,
+		viewBox: "0 0 24 24",
+		fill: "none",
+		stroke: "currentColor",
+		strokeWidth: "2",
+		strokeLinecap: "round",
+		strokeLinejoin: "round",
+		children: [
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2Z" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M14 2v6h6" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "m9 15 2 2 4-4" })
+		]
+	});
+	var FileXIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
+		style: kIcon,
+		viewBox: "0 0 24 24",
+		fill: "none",
+		stroke: "currentColor",
+		strokeWidth: "2",
+		strokeLinecap: "round",
+		strokeLinejoin: "round",
+		children: [
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2Z" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M14 2v6h6" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "m9.5 12.5 5 5" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "m14.5 12.5-5 5" })
+		]
+	});
+	var kpiColorPrimary = {
+		background: "color-mix(in srgb, var(--color-primary) 12%, transparent)",
+		color: "var(--color-primary)"
+	};
+	var kpiColorGood = {
+		background: "color-mix(in srgb, #10b981 14%, transparent)",
+		color: "#059669"
+	};
+	var kpiColorMuted = {
+		background: "var(--color-muted,rgba(0,0,0,.06))",
+		color: "var(--color-muted-foreground)"
+	};
 	var COL_ORDER = [
 		"id",
 		"domain",
@@ -1457,29 +1533,48 @@
 			]
 		});
 	}
-	function Kpi({ label: lbl, value, narrow }) {
+	function Kpi({ label: lbl, value, narrow, icon: Icon, color }) {
 		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			style: {
 				...card,
 				display: "flex",
-				flexDirection: "column",
-				gap: 2,
+				alignItems: "center",
+				gap: narrow ? 8 : 12,
 				padding: narrow ? 12 : 16,
 				flex: 1,
 				minWidth: narrow ? 92 : 140
 			},
-			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				style: {
-					fontSize: 12,
-					color: "var(--color-muted-foreground)"
+					display: "grid",
+					placeItems: "center",
+					width: narrow ? 30 : 40,
+					height: narrow ? 30 : 40,
+					borderRadius: 8,
+					flexShrink: 0,
+					...color
 				},
-				children: lbl
-			}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+				children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Icon, {})
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				style: {
-					fontSize: narrow ? 18 : 22,
-					fontWeight: 700
+					minWidth: 0,
+					display: "flex",
+					flexDirection: "column",
+					gap: 2
 				},
-				children: value == null ? "…" : value
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+					style: {
+						fontSize: 12,
+						color: "var(--color-muted-foreground)"
+					},
+					children: lbl
+				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+					style: {
+						fontSize: narrow ? 18 : 22,
+						fontWeight: 700
+					},
+					children: value == null ? "…" : value
+				})]
 			})]
 		});
 	}
@@ -1659,6 +1754,10 @@
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(ViewToggle, {
 							mode,
 							compact: narrow,
+							labels: {
+								react: t("view_new"),
+								iframe: t("view_old")
+							},
 							onChange: (m) => {
 								setMode(m);
 								if (m === "iframe") setFrameLoaded(true);
@@ -1710,33 +1809,43 @@
 						children: t("no_access")
 					}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
 						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-							style: {
+							style: narrow ? {
+								display: "grid",
+								gridTemplateColumns: "repeat(2, 1fr)",
+								gap: 8
+							} : {
 								display: "flex",
-								gap: narrow ? 8 : 12,
+								gap: 12,
 								flexWrap: "wrap"
 							},
 							children: [
 								/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Kpi, {
 									label: t("kpi_total"),
 									value: stats?.total ?? null,
-									narrow
+									narrow,
+									icon: GlobeIcon,
+									color: kpiColorPrimary
 								}),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Kpi, {
 									label: t("kpi_with"),
 									value: stats?.withRobots ?? null,
-									narrow
+									narrow,
+									icon: FileCheckIcon,
+									color: kpiColorGood
 								}),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Kpi, {
 									label: t("kpi_without"),
 									value: stats?.withoutRobots ?? null,
-									narrow
+									narrow,
+									icon: FileXIcon,
+									color: kpiColorMuted
 								})
 							]
 						}),
 						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 							style: {
 								display: "flex",
-								gap: 8,
+								gap: 12,
 								flexWrap: "wrap",
 								alignItems: "center"
 							},
@@ -1745,7 +1854,7 @@
 									style: {
 										...inputCss,
 										height: 36,
-										flex: narrow ? "1 1 100%" : 1,
+										flex: narrow ? "1 1 100%" : "0 1 320px",
 										minWidth: narrow ? 0 : 220
 									},
 									value: searchInput,
@@ -1769,54 +1878,69 @@
 										children: s.name
 									}, s.id))]
 								}),
-								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
-									style: {
-										...btnGhost,
-										height: 36,
-										...narrow ? {
-											flex: "1 1 100%",
-											justifyContent: "center"
-										} : {}
-									},
-									onClick: resetFilters,
-									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(ResetIcon, {}), t("reset_filters")]
-								}),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-									ref: colsAnchorRef,
 									style: {
-										position: "relative",
-										...narrow ? { flex: "1 1 calc(50% - 4px)" } : {}
+										display: "flex",
+										gap: 12,
+										flexWrap: "wrap",
+										alignItems: "center",
+										...narrow ? { width: "100%" } : { marginLeft: "auto" }
 									},
-									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
-										style: {
-											...btnGhost,
-											height: 36,
-											...narrow ? {
-												width: "100%",
-												justifyContent: "center"
-											} : {}
-										},
-										onClick: () => setShowCols((v) => !v),
-										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(GripIcon, {}), t("columns")]
-									}), showCols && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ColManager, {
-										anchorRef: colsAnchorRef,
-										cols,
-										labelFor: (id) => t(COL_LABEL[id]),
-										onChange: setCols,
-										onClose: () => setShowCols(false)
-									})]
-								}),
-								can("export") && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
-									style: {
-										...btnGhost,
-										height: 36,
-										...narrow ? {
-											flex: "1 1 calc(50% - 4px)",
-											justifyContent: "center"
-										} : {}
-									},
-									onClick: () => setShowExport(true),
-									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(DownloadIcon, {}), t("export")]
+									children: [
+										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
+											style: {
+												...btnGhost,
+												height: 36,
+												...narrow ? {
+													flex: "1 1 100%",
+													justifyContent: "center"
+												} : {}
+											},
+											onClick: resetFilters,
+											children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(ResetIcon, {}), t("reset_filters")]
+										}),
+										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+											ref: colsAnchorRef,
+											style: {
+												position: "relative",
+												...narrow ? {
+													flex: "1 1 calc(50% - 6px)",
+													minWidth: 0
+												} : {}
+											},
+											children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
+												style: {
+													...btnGhost,
+													height: 36,
+													...narrow ? {
+														width: "100%",
+														justifyContent: "center"
+													} : {}
+												},
+												onClick: () => setShowCols((v) => !v),
+												children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(GripIcon, {}), t("columns")]
+											}), showCols && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ColManager, {
+												anchorRef: colsAnchorRef,
+												cols,
+												labelFor: (id) => t(COL_LABEL[id]),
+												onChange: setCols,
+												onClose: () => setShowCols(false)
+											})]
+										}),
+										can("export") && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
+											style: {
+												...btnGhost,
+												height: 36,
+												...narrow ? {
+													flex: "1 1 calc(50% - 6px)",
+													minWidth: 0,
+													justifyContent: "center"
+												} : {}
+											},
+											onClick: () => setShowExport(true),
+											children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(DownloadIcon, {}), t("export")]
+										})
+									]
 								})
 							]
 						}),
