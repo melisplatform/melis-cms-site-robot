@@ -10,6 +10,8 @@ import { ExportModal, DownloadIcon } from './ExportModal'
 import { ViewToggle } from './ViewToggle'
 import { useIsNarrow } from './shared/useIsNarrow'
 import { ExpandToggle, HiddenColsRow } from './shared/ExpandableRow'
+import { FormErrorBanner, koNotify, type FormIssue } from './shared/melis-form-errors'
+import { useDragReorder } from './shared/use-drag-reorder'
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Brique « Robots » (MelisCmsSiteRobot) — full React, montée à /melis-cms/site-robot
@@ -71,6 +73,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     f_robot_hint: 'Le contenu servi à /robots.txt pour ce domaine. Laisser vide pour ne rien servir.',
     f_robot_ph: 'User-agent: *\nDisallow:',
     export_filename: 'domaines-robots', err_save: 'Erreur lors de la sauvegarde',
+    err_headline: 'L’enregistrement du robots.txt a échoué.',
     no_access: 'Vous n’avez pas les droits pour consulter cette liste.',
   },
   en: {
@@ -91,6 +94,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     f_robot_hint: 'The content served at /robots.txt for this domain. Leave empty to serve nothing.',
     f_robot_ph: 'User-agent: *\nDisallow:',
     export_filename: 'domain-robots', err_save: 'Error while saving',
+    err_headline: 'Saving the robots.txt failed.',
     no_access: 'You do not have permission to view this list.',
   },
 }
@@ -140,9 +144,6 @@ type ColDef = { id: string; visible: boolean }
 const COL_ORDER = ['id', 'domain', 'site', 'env', 'robots'] as const
 const COL_LABEL: Record<string, string> = { id: 'col_id', domain: 'col_domain', site: 'col_site', env: 'col_env', robots: 'col_robots' }
 const DEFAULT_COLS: ColDef[] = COL_ORDER.map((id) => ({ id, visible: id !== 'id' }))
-// Sur viewport étroit, la table est ramenée à CETTE seule colonne (celle qui identifie le mieux la
-// ligne) + le « + » d'expansion + les actions → tient sans scroll horizontal sur un téléphone.
-const ESSENTIAL_COLS = new Set(['domain'])
 const COL_KEY = 'melis-site-robot-cols-v1'
 function loadCols(): ColDef[] {
   try {
@@ -164,8 +165,11 @@ function ColManager({ anchorRef, cols, labelFor, onChange, onClose }: {
 }) {
   const t = useT()
   const narrow = useIsNarrow()
-  const [dragId, setDragId] = useState<string | null>(null)
-  const [over, setOver] = useState<{ id: string; panel: 'visible' | 'hidden' } | null>(null)
+  // Touch-compatible drag (mouse + touch events, not native HTML5 draggable — that API never
+  // fires from touch input) — see shared/use-drag-reorder.ts.
+  const { draggingId: dragId, overTarget: over, dragPos, startDragMouse, startDragTouch } = useDragReorder({
+    cols, onChange: (next) => { onChange(next); saveCols(next) },
+  })
   const [pos, setPos] = useState<{ top?: number; bottom?: number; left: number; width: number; maxHeight: number } | null>(null)
   const shown = cols.filter((c) => c.visible)
   const hidden = cols.filter((c) => !c.visible)
@@ -192,30 +196,11 @@ function ColManager({ anchorRef, cols, labelFor, onChange, onClose }: {
     }
   }, [anchorRef])
 
-  function drop(panel: 'visible' | 'hidden') {
-    if (!dragId) return
-    const src = cols.find((c) => c.id === dragId)!
-    const upd = { ...src, visible: panel === 'visible' }
-    let vList = shown.filter((c) => c.id !== dragId)
-    const hList = hidden.filter((c) => c.id !== dragId)
-    if (panel === 'visible') {
-      const dst = over?.id
-      if (!dst || dst === '__panel__') vList = [...vList, upd]
-      else { const i = vList.findIndex((c) => c.id === dst); vList = i === -1 ? [...vList, upd] : [...vList.slice(0, i), upd, ...vList.slice(i)] }
-      const next = [...vList, ...hList]; onChange(next); saveCols(next)
-    } else { const next = [...vList, ...hList, upd]; onChange(next); saveCols(next) }
-    setDragId(null); setOver(null)
-  }
-
   function item(col: ColDef, panel: 'visible' | 'hidden') {
     const isOver = over?.id === col.id && over?.panel === panel
     return (
-      <div key={col.id} draggable
-        onDragStart={() => setDragId(col.id)}
-        onDragEnd={() => { setDragId(null); setOver(null) }}
-        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); if (over?.id !== col.id || over?.panel !== panel) setOver({ id: col.id, panel }) }}
-        onDrop={(e) => { e.preventDefault(); drop(panel) }}
-        style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 8, padding: '6px 8px', fontSize: 14, cursor: 'grab', userSelect: 'none', opacity: dragId === col.id ? 0.4 : 1, background: isOver ? 'color-mix(in srgb, var(--color-primary) 12%, transparent)' : 'transparent' }}>
+      <div key={col.id} data-col-item={col.id} onMouseDown={startDragMouse(col.id)} onTouchStart={startDragTouch(col.id)}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 8, padding: '6px 8px', fontSize: 14, cursor: 'grab', userSelect: 'none', touchAction: 'none', opacity: dragId === col.id ? 0.4 : 1, background: isOver ? 'color-mix(in srgb, var(--color-primary) 12%, transparent)' : 'transparent' }}>
         <GripIcon /><span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{labelFor(col.id)}</span>
       </div>
     )
@@ -223,6 +208,7 @@ function ColManager({ anchorRef, cols, labelFor, onChange, onClose }: {
 
   if (!pos) return null
   return (
+    <>
     <div style={{
       ...card, position: 'fixed', left: pos.left, zIndex: 50, width: pos.width,
       maxHeight: pos.maxHeight, overflowY: 'auto', display: 'flex', flexDirection: 'column',
@@ -235,15 +221,11 @@ function ColManager({ anchorRef, cols, labelFor, onChange, onClose }: {
       {/* Masquées / Visibles côte à côte sur desktop ; empilés sur étroit (à 2 colonnes dans un
           panneau étroit, les libellés sont tronqués et le drag&drop devient aveugle). */}
       <div style={{ display: 'grid', gridTemplateColumns: narrow ? 'minmax(0, 1fr)' : '1fr 1fr', gap: 8, padding: 12 }}>
-        <div style={panelCss}
-          onDragOver={(e) => { e.preventDefault(); if (over?.id !== '__panel__' || over?.panel !== 'hidden') setOver({ id: '__panel__', panel: 'hidden' }) }}
-          onDrop={(e) => { e.preventDefault(); drop('hidden') }}>
+        <div data-col-panel="hidden" style={{ ...panelCss, ...(over?.id === '__panel__' && over.panel === 'hidden' ? { borderColor: 'color-mix(in srgb, var(--color-primary) 40%, transparent)', background: 'color-mix(in srgb, var(--color-primary) 5%, transparent)' } : {}) }}>
           <p style={panelTitle}>{t('cols_hidden')}</p>
           {hidden.length === 0 ? <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: 'var(--color-muted-foreground)', opacity: 0.5, padding: '16px 0' }}>{t('drag_here')}</div> : hidden.map((c) => item(c, 'hidden'))}
         </div>
-        <div style={panelCss}
-          onDragOver={(e) => { e.preventDefault(); if (over?.id !== '__panel__' || over?.panel !== 'visible') setOver({ id: '__panel__', panel: 'visible' }) }}
-          onDrop={(e) => { e.preventDefault(); drop('visible') }}>
+        <div data-col-panel="visible" style={{ ...panelCss, ...(over?.id === '__panel__' && over.panel === 'visible' ? { borderColor: 'color-mix(in srgb, var(--color-primary) 40%, transparent)', background: 'color-mix(in srgb, var(--color-primary) 5%, transparent)' } : {}) }}>
           <p style={panelTitle}>{t('cols_visible')}</p>
           {shown.length === 0 ? <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: 'var(--color-muted-foreground)', opacity: 0.5, padding: '16px 0' }}>{t('drag_here')}</div> : shown.map((c) => item(c, 'visible'))}
         </div>
@@ -253,6 +235,12 @@ function ColManager({ anchorRef, cols, labelFor, onChange, onClose }: {
           onClick={() => { onChange(DEFAULT_COLS); saveCols(DEFAULT_COLS) }}>{t('reset')}</button>
       </div>
     </div>
+    {dragId && dragPos && (
+      <div style={{ position: 'fixed', zIndex: 60, left: dragPos.x, top: dragPos.y, transform: 'translate(-50%, -50%)', pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: 8, borderRadius: 8, padding: '6px 10px', fontSize: 14, fontWeight: 500, background: 'var(--color-card)', border: '1px solid color-mix(in srgb, var(--color-primary) 40%, transparent)', boxShadow: '0 4px 16px rgba(0,0,0,.25)' }}>
+        <GripIcon />{labelFor(dragId)}
+      </div>
+    )}
+    </>
   )
 }
 
@@ -329,8 +317,13 @@ function DomainList({ base }: { base: string }) {
   const toggleExpand = (rid: number) => setExpanded((s) => {
     const n = new Set(s); n.has(rid) ? n.delete(rid) : n.add(rid); return n
   })
-  const displayCols = narrow ? cols.map((c) => ({ ...c, visible: ESSENTIAL_COLS.has(c.id) })) : cols
-  const hasHidden = narrow
+  // A Hidden column disappears entirely on both desktop and mobile — same rule everywhere, no "+"
+  // peek at Hidden ones. Desktop shows every Visible column inline. Mobile can't fit many columns,
+  // so only the FIRST Visible column (by the user's dragged order in ColManager) anchors inline;
+  // every OTHER Visible column surfaces behind the per-row "+" instead, in that same order.
+  const shownColsList = cols.filter((c) => c.visible)
+  const displayCols = narrow ? shownColsList.map((c, i) => ({ ...c, visible: i === 0 })) : shownColsList
+  const hasHidden = narrow && shownColsList.length > 1
 
   // Liste = scroll infini + tri server-side (keyset). `tick` (deps) relance un chargement
   // frais (reset filtres / retour du formulaire / delete) et sert aussi de trigger aux stats.
@@ -545,7 +538,9 @@ function RobotForm({ id, base }: { id: string; base: string }) {
   const [robotText, setRobotText] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  // Bannière d'erreur unifiée : titre (bandeau) + liste du/des champ(s) en cause.
+  const [errTitle, setErrTitle] = useState<string | null>(null)
+  const [issues, setIssues] = useState<FormIssue[]>([])
   const [saved, setSaved] = useState(false)
 
   // Sous-onglet nommé (look Users) : ouvert au montage, renommé avec le domaine au chargement.
@@ -567,7 +562,7 @@ function RobotForm({ id, base }: { id: string; base: string }) {
   }, [domainId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function submit() {
-    setError(null); setSaving(true)
+    setErrTitle(null); setIssues([]); setSaving(true)
     try {
       await saveRobot({ id: domainId, robotText })
       setSaved(true)
@@ -575,7 +570,9 @@ function RobotForm({ id, base }: { id: string; base: string }) {
       notify('ok', t('title'), t('saved'))
       setTimeout(() => navigate(base), 500)
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('err_save'))
+      const msg = e instanceof Error ? e.message : t('err_save')
+      setErrTitle(t('err_headline')); setIssues([{ label: t('f_robot'), message: msg }])
+      koNotify(t('title'), t('err_headline'))
     } finally { setSaving(false) }
   }
 
@@ -591,7 +588,7 @@ function RobotForm({ id, base }: { id: string; base: string }) {
         </div>
       </div>
 
-      {error && <div style={{ ...card, borderColor: '#fca5a5', background: '#fef2f2', color: '#b91c1c', padding: '8px 14px', fontSize: 14 }}>{error}</div>}
+      {errTitle && <FormErrorBanner title={errTitle} issues={issues} />}
 
       {loading ? (
         <div style={{ padding: 48, textAlign: 'center', color: 'var(--color-muted-foreground)' }}>{t('loading')}</div>
