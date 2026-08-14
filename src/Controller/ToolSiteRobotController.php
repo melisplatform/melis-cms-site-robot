@@ -18,6 +18,12 @@ class ToolSiteRobotController extends MelisAbstractActionController
     const TOOL_INDEX = 'meliscms';
     const LOG_UPDATE = 'CMS_SITE_ROBOT_UPDATE';
 
+    /** @INFO: Tool access check (CWE-862). */
+    private function hasAccess($key)
+    {
+        return $this->getServiceManager()->get('MelisCoreRights')->canAccess($key);
+    }
+
     /**
      * MelisCmsSiteRobot/src/MelisCmsSiteRobot/Controller/ToolSiteRobotController.php
      * Handles the retrieval of robots text
@@ -232,6 +238,10 @@ class ToolSiteRobotController extends MelisAbstractActionController
      */
     public function getSiteRobotDataAction()
     {
+        if (! $this->hasAccess('meliscms_site_robot_tools_section')) {
+            return new JsonModel(['draw' => (int) $this->getRequest()->getPost('draw', 0), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => []]);
+        }
+
         $request = $this->getRequest();
         $dataCount = 0;
         $dataFilteredCount = 0;
@@ -305,6 +315,11 @@ class ToolSiteRobotController extends MelisAbstractActionController
      */
     public function saveSiteRobotAction()
     {
+        /** @INFO: Access check (tool right) — CWE-862 */
+        if (! $this->hasAccess('meliscms_site_robot_tools_section')) {
+            return new JsonModel(['success' => 0, 'textTitle' => '', 'textMessage' => 'tr_meliscore_microservice_api_key_no_access', 'errors' => [], 'datas' => []]);
+        }
+
         $success = 0;
         $message = 'tr_site_robot_save_ko';
         $title = 'tr_site_robot_title';
