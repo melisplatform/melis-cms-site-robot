@@ -63,7 +63,6 @@ return array(
 
     'translator' => array(
         'locale' => 'en_EN',
-        'locale' => 'fr_FR',
     ),
 
     'service_manager' => array(
