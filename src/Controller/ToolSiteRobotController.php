@@ -14,6 +14,13 @@ use Laminas\View\Model\ViewModel;
 
 class ToolSiteRobotController extends MelisAbstractActionController
 {
+    /**
+     * Outil auquel ce contrôleur appartient (audit DEKRA 7.0) : MelisCoreAuthorizationListener
+     * vérifie canAccess() sur cette clé AVANT le dispatch. La clé de TOOL_KEY n'est pas cochable
+     * dans Utilisateurs → Droits (TOOL_KEY reste la clé de configuration de l'outil).
+     */
+    const MELIS_KEY = 'meliscms_site_robot_tools_section';
+
     const TOOL_KEY = 'meliscms_tool_site_robot';
     const TOOL_INDEX = 'meliscms';
     const LOG_UPDATE = 'CMS_SITE_ROBOT_UPDATE';
