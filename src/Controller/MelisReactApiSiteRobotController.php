@@ -212,8 +212,8 @@ class MelisReactApiSiteRobotController extends MelisAbstractActionController
                 return $this->jsonResponse(['success' => false, 'error' => 'Domaine invalide.'], 400);
             }
 
-            // Cap stored robots.txt length to prevent unbounded attacker-authored content
-            // being served verbatim on the public /robots.txt route.
+            // Cap the stored robots.txt length (it is served verbatim on the public
+            // /robots.txt route).
             $maxLen = 65535;
             if (strlen($robotText) > $maxLen) {
                 return $this->jsonResponse([
