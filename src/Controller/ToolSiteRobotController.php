@@ -15,8 +15,8 @@ use Laminas\View\Model\ViewModel;
 class ToolSiteRobotController extends MelisAbstractActionController
 {
     /**
-     * Outil auquel ce contrôleur appartient (audit DEKRA 7.0) : MelisCoreAuthorizationListener
-     * vérifie canAccess() sur cette clé AVANT le dispatch. La clé de TOOL_KEY n'est pas cochable
+     * Outil auquel ce contrôleur appartient : MelisCoreAuthorizationListener
+     * vérifie canAccess() sur cette clé avant le dispatch. La clé de TOOL_KEY n'est pas cochable
      * dans Utilisateurs → Droits (TOOL_KEY reste la clé de configuration de l'outil).
      */
     const MELIS_KEY = 'meliscms_site_robot_tools_section';
@@ -25,7 +25,7 @@ class ToolSiteRobotController extends MelisAbstractActionController
     const TOOL_INDEX = 'meliscms';
     const LOG_UPDATE = 'CMS_SITE_ROBOT_UPDATE';
 
-    /** @INFO: Tool access check (CWE-862). */
+    /** @INFO: Tool access check. */
     private function hasAccess($key)
     {
         return $this->getServiceManager()->get('MelisCoreRights')->canAccess($key);
@@ -50,8 +50,8 @@ class ToolSiteRobotController extends MelisAbstractActionController
             $content = $data->robot_text;
         }
 
-        // Serve attacker-authored robots.txt content safely: force text/plain and
-        // prevent MIME sniffing so it is never interpreted as HTML on the site origin.
+        // Serve the robots.txt content as text/plain and disable MIME sniffing so it
+        // is never interpreted as HTML on the site origin.
         $response = $this->getResponse();
         $response->getHeaders()->addHeaders([
             'Content-Type'           => 'text/plain; charset=utf-8',
@@ -322,7 +322,7 @@ class ToolSiteRobotController extends MelisAbstractActionController
      */
     public function saveSiteRobotAction()
     {
-        /** @INFO: Access check (tool right) — CWE-862 */
+        /** @INFO: Access check (tool right) */
         if (! $this->hasAccess('meliscms_site_robot_tools_section')) {
             return new JsonModel(['success' => 0, 'textTitle' => '', 'textMessage' => 'tr_meliscore_microservice_api_key_no_access', 'errors' => [], 'datas' => []]);
         }
